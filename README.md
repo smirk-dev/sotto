@@ -169,8 +169,8 @@ useful to you, a ⭐ **star** helps others find it.
 
 ## License
 
-[MIT](LICENSE) for Sotto's own code. Bundled components keep their own licenses (OpenVINO
-Apache-2.0, Whisper weights MIT, PySide6/Qt LGPL, PortAudio MIT).
+[MIT](LICENSE) for Sotto's own code. Bundled components keep their own licenses — see
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 <div align="center"><sub>
 

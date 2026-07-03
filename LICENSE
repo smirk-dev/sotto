@@ -19,14 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Sotto bundles third-party open-source components, each under its own license:
-  - OpenVINO / openvino-genai (Apache-2.0)
-  - OpenAI Whisper model weights, via Intel's OpenVINO conversions (MIT)
-  - PySide6 / Qt (LGPL-3.0)
-  - sounddevice / PortAudio (MIT / BSD)
-  - NumPy (BSD)
-These remain under their respective licenses; the MIT license above covers
-only Sotto's own source code.
