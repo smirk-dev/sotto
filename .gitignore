@@ -31,3 +31,12 @@ LAUNCH.md
 # OS
 Thumbs.db
 desktop.ini
+
+# Supabase secrets (never commit)
+SUPABASE.md
+.supabase-keys.json
+
+# Supabase CLI local link state
+supabase/.temp/
+supabase/.branches/
+

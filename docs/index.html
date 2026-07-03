@@ -3,10 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sotto — free, private, local dictation for Windows</title>
-<meta name="description" content="Sotto is a free, open-source, 100% offline dictation app for Windows. Hold a hotkey, speak, and accurate text is typed wherever your cursor is. Whisper on your CPU. English, Hindi & Hinglish. A private Wispr Flow alternative." />
+<title>Sotto — Free Open-Source Voice-to-Text Dictation for Windows (Wispr Flow Alternative)</title>
+<meta name="description" content="Sotto is a free, open-source, 100% offline voice-to-text dictation app for Windows. Hold a hotkey, speak, and accurate text is typed wherever your cursor is. Whisper runs on your CPU — English, Hindi & Hinglish. The private, free alternative to Wispr Flow and Dragon." />
+<meta name="keywords" content="voice to text, dictation software, speech to text, open source dictation, free dictation app, wispr flow alternative, offline dictation, voice typing windows, whisper dictation, local speech recognition, dragon alternative, hindi dictation, voice to text agent, private dictation" />
+<meta name="author" content="Suryansh" />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#0b0b0f" />
+<link rel="canonical" href="https://smirk-dev.github.io/sotto/" />
 <link rel="icon" href="logo.png" />
 <meta property="og:type" content="website" />
+<meta property="og:site_name" content="Sotto" />
 <meta property="og:title" content="Sotto — free, private, local dictation for Windows" />
 <meta property="og:description" content="Hold a hotkey, speak, and text is typed wherever your cursor is. 100% local, free & open source. English + Hindi." />
 <meta property="og:image" content="https://smirk-dev.github.io/sotto/social-preview.png" />
@@ -15,29 +21,59 @@
 <meta name="twitter:title" content="Sotto — free, private, local dictation for Windows" />
 <meta name="twitter:description" content="Hold a hotkey, speak, and text is typed wherever your cursor is. 100% local, free & open source." />
 <meta name="twitter:image" content="https://smirk-dev.github.io/sotto/social-preview.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Sotto",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Windows 10, Windows 11",
+  "description": "Free, open-source, 100% offline voice-to-text dictation for Windows. Hold a hotkey, speak, and text is typed wherever your cursor is. Whisper on your CPU, English + Hindi.",
+  "url": "https://smirk-dev.github.io/sotto/",
+  "downloadUrl": "https://github.com/smirk-dev/sotto/releases/latest",
+  "softwareVersion": "1.2.0",
+  "license": "https://github.com/smirk-dev/sotto/blob/main/LICENSE",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "Suryansh" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is my audio uploaded anywhere?", "acceptedAnswer": { "@type": "Answer", "text": "No. Transcription runs entirely on your CPU. The only network request is a one-time model download you start yourself." } },
+    { "@type": "Question", "name": "Is Sotto free and open source?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Sotto is MIT-licensed and completely free. The voice-to-text dictation is open source forever." } },
+    { "@type": "Question", "name": "Does it need a GPU?", "acceptedAnswer": { "@type": "Answer", "text": "No. Sotto is tuned for CPU and runs on a normal laptop. You can optionally use an Intel iGPU." } },
+    { "@type": "Question", "name": "Which languages are supported?", "acceptedAnswer": { "@type": "Answer", "text": "English and Hindi/Hinglish out of the box, with one-click switching, plus about 99 languages via Whisper." } }
+  ]
+}
+</script>
 <style>
-  :root{--bg:#0b0b0f;--card:#15151b;--card2:#1a1a22;--text:#eaeaf0;--muted:#9a9aa6;--accent:#9d8cff;--accent2:#6e62b8;--border:#26262e;--ok:#7bc98a}
+  :root{--bg:#0b0b0f;--card:#15151b;--card2:#1a1a22;--text:#eaeaf0;--muted:#9a9aa6;--accent:#9d8cff;--accent2:#6e62b8;--border:#26262e;--ok:#7bc98a;--err:#e5645e}
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{background:radial-gradient(1200px 600px at 80% -10%,rgba(157,140,255,.10),transparent),var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
   .wrap{max-width:980px;margin:0 auto;padding:0 24px}
   a{color:var(--accent);text-decoration:none}
-  .btn{display:inline-block;padding:14px 26px;border-radius:12px;font-weight:650;font-size:16px;border:1px solid var(--border);transition:.15s}
+  .btn{display:inline-block;padding:14px 26px;border-radius:12px;font-weight:650;font-size:16px;border:1px solid var(--border);transition:.15s;cursor:pointer}
   .btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
   .btn.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
   .btn.ghost{color:var(--text);background:var(--card)}
   .btn.ghost:hover{background:var(--card2)}
   header{text-align:center;padding:70px 0 30px}
   header img.logo{width:96px;height:96px;border-radius:22px}
-  h1{font-size:clamp(38px,6vw,60px);letter-spacing:-1.5px;margin:18px 0 6px;background:linear-gradient(180deg,#fff,#c9c4e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .tag{font-size:clamp(17px,2.6vw,21px);color:var(--muted);max-width:680px;margin:0 auto 26px}
+  h1{font-size:clamp(34px,5.5vw,56px);letter-spacing:-1.5px;margin:18px 0 6px;background:linear-gradient(180deg,#fff,#c9c4e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .tag{font-size:clamp(17px,2.6vw,21px);color:var(--muted);max-width:700px;margin:0 auto 26px}
   .tag b{color:var(--text);font-weight:600}
   .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
   .sub{color:var(--muted);font-size:14px}
   .demo{display:block;width:100%;max-width:760px;margin:38px auto 8px;border-radius:16px;border:1px solid var(--border);box-shadow:0 30px 80px rgba(0,0,0,.5)}
   .demo-cap{text-align:center;color:var(--muted);font-size:14px;margin-bottom:20px}
   section{padding:48px 0;border-top:1px solid var(--border)}
-  h2{font-size:28px;letter-spacing:-.5px;margin-bottom:22px;text-align:center}
+  h2{font-size:28px;letter-spacing:-.5px;margin-bottom:10px;text-align:center}
+  .lead{text-align:center;color:var(--muted);max-width:680px;margin:0 auto 22px}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
   .feat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
   .feat .ic{font-size:24px}
@@ -49,8 +85,8 @@
   thead th{background:var(--card2)}
   thead th:nth-child(2){color:var(--accent)}
   tr:last-child td{border-bottom:none}
-  .steps{counter-reset:s;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-  .step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 20px 20px 20px;position:relative}
+  .steps{counter-reset:s;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative}
   .step:before{counter-increment:s;content:counter(s);display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;background:var(--accent2);color:#fff;border-radius:9px;font-weight:700;margin-bottom:10px}
   .step h3{font-size:16px;margin-bottom:4px}
   .step p{color:var(--muted);font-size:14px}
@@ -58,41 +94,60 @@
   details{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:10px}
   summary{cursor:pointer;font-weight:600}
   details p{color:var(--muted);margin-top:8px}
+  /* waitlist */
+  .wl{background:linear-gradient(180deg,#181527,#141019);border:1px solid #302a4a;border-radius:18px;padding:34px 28px;max-width:680px;margin:0 auto;text-align:center}
+  .wl .pill{display:inline-block;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);background:rgba(157,140,255,.12);border:1px solid #3a3460;border-radius:999px;padding:5px 12px;margin-bottom:14px}
+  .wl h2{text-align:center}
+  .wl form{display:grid;gap:12px;margin-top:20px;text-align:left}
+  .wl .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .wl input,.wl select,.wl textarea{width:100%;background:#0e0e14;border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;font-family:inherit}
+  .wl input:focus,.wl select:focus,.wl textarea:focus{outline:none;border-color:var(--accent2)}
+  .wl label{font-size:12.5px;color:var(--muted);margin-bottom:-6px}
+  .wl .hp{position:absolute;left:-9999px}
+  .wl .submit{margin-top:6px;width:100%;text-align:center;border:none;font-size:16px}
+  .wl .msg{margin-top:14px;font-size:14.5px;min-height:20px}
+  .wl .msg.ok{color:var(--ok)}
+  .wl .msg.err{color:var(--err)}
+  .wl .fine{color:#6a6a76;font-size:12.5px;margin-top:10px}
   footer{text-align:center;color:var(--muted);font-size:13px;padding:40px 0 60px}
   .kw{margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#55555f}
+  @media(max-width:560px){.wl .row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header class="wrap">
-  <img class="logo" src="logo.png" alt="Sotto logo" />
+  <img class="logo" src="logo.png" alt="Sotto voice-to-text dictation app logo" />
   <h1>Sotto</h1>
   <p class="tag"><b>Free, private, local dictation for Windows.</b> Hold a hotkey, speak, and
-  accurate text is typed wherever your cursor is — 100% on your device.</p>
+  accurate text is typed wherever your cursor is — 100% on your device. The open-source
+  voice-to-text alternative to Wispr Flow.</p>
   <div class="cta">
     <a class="btn primary" href="https://github.com/smirk-dev/sotto/releases/latest">⬇️ Download for Windows</a>
     <a class="btn ghost" href="https://github.com/smirk-dev/sotto">★ Star on GitHub</a>
   </div>
   <div class="sub">No cloud · no account · no subscription · open source</div>
-  <img class="demo" src="demo.gif" alt="Sotto live dictation demo in English and Hindi" />
+  <img class="demo" src="demo.gif" alt="Sotto live voice-to-text dictation demo in English and Hindi" />
   <div class="demo-cap">Live dictation in English and Hindi — text appears as you speak.</div>
 </header>
 
 <section class="wrap">
   <h2>Why Sotto?</h2>
+  <p class="lead">A free, open-source voice-to-text app that keeps your microphone on your own
+  machine — the private alternative to paid cloud dictation.</p>
   <div class="grid">
     <div class="feat"><div class="ic">🔒</div><h3>100% private</h3><p>Whisper runs locally on your CPU. Audio never leaves your PC — no cloud, no telemetry.</p></div>
     <div class="feat"><div class="ic">⌨️</div><h3>Types anywhere</h3><p>Terminals, Office, browsers, chat, IDEs — even elevated windows. Works where paste is blocked.</p></div>
     <div class="feat"><div class="ic">🌍</div><h3>English + Hindi</h3><p>Auto-detected per phrase, with Hindi/Urdu correction. Dictate mixed-language meetings.</p></div>
     <div class="feat"><div class="ic">⚡</div><h3>Live typing</h3><p>Toggle mode types as you speak — perfect for hands-free meeting notes.</p></div>
     <div class="feat"><div class="ic">🧠</div><h3>Noise-robust</h3><p>A voice-activity gate ignores static and background noise instead of inventing text.</p></div>
-    <div class="feat"><div class="ic">🪶</div><h3>Free & light</h3><p>No GPU required. No fees, ever. ~400 lines of readable open-source Python.</p></div>
+    <div class="feat"><div class="ic">🪶</div><h3>Free forever</h3><p>No GPU required. No fees, ever. MIT-licensed, open-source Python.</p></div>
   </div>
 </section>
 
 <section class="wrap">
   <h2>Get started in 2 minutes</h2>
   <div class="steps">
-    <div class="step"><h3>Download & unzip</h3><p>Grab <code>Sotto-windows-x64.zip</code> from Releases and unzip it.</p></div>
+    <div class="step"><h3>Download &amp; unzip</h3><p>Grab <code>Sotto-windows-x64.zip</code> from Releases and unzip it.</p></div>
     <div class="step"><h3>Run Sotto.exe</h3><p>SmartScreen may warn (unsigned) → <em>More info → Run anyway</em>.</p></div>
     <div class="step"><h3>Download the model</h3><p>Settings → Model → Download (one-time, ~300 MB).</p></div>
     <div class="step"><h3>Speak</h3><p>Hold <code>Ctrl + Win</code>, talk, release. Text appears at your cursor. 🎉</p></div>
@@ -103,30 +158,122 @@
   <h2>How it compares</h2>
   <div style="overflow-x:auto">
   <table>
-    <thead><tr><th></th><th>Sotto</th><th>Wispr Flow</th><th>Voice Access</th><th>Talon</th></tr></thead>
+    <thead><tr><th></th><th>Sotto</th><th>Wispr Flow</th><th>Voice Access</th><th>Dragon</th></tr></thead>
     <tbody>
       <tr><td>Runs 100% offline</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
-      <tr><td>Free</td><td>✅</td><td>💲</td><td>✅</td><td>partly</td></tr>
+      <tr><td>Free</td><td>✅</td><td>💲</td><td>✅</td><td>💲💲</td></tr>
       <tr><td>Open source</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
       <tr><td>Hindi / Hinglish</td><td>✅</td><td>✅</td><td>limited</td><td>❌</td></tr>
-      <tr><td>Type as you speak</td><td>✅</td><td>✅</td><td>⚠️</td><td>⚠️</td></tr>
+      <tr><td>Type as you speak</td><td>✅</td><td>✅</td><td>⚠️</td><td>✅</td></tr>
       <tr><td>No account needed</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
     </tbody>
   </table>
   </div>
 </section>
 
+<section class="wrap" id="waitlist">
+  <div class="wl">
+    <div class="pill">Coming soon · Premium</div>
+    <h2>Unlimited full-file transcription</h2>
+    <p class="lead" style="margin-bottom:6px">The live dictation you're downloading is <b>free and open source, forever.</b>
+    We're building an optional premium tier: <b>upload any audio or video — any length, any
+    language — and get an accurate transcript back.</b> Hours-long recordings, meetings, lectures,
+    podcasts, interviews. No limits.</p>
+    <p class="lead">Join the waitlist and we'll build it if enough people want it. No spam, no
+    commitment — just tell us you're interested.</p>
+    <form id="wlform" autocomplete="on">
+      <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+      <input type="email" name="email" placeholder="you@email.com" required aria-label="Email" />
+      <div class="row">
+        <input type="text" name="name" placeholder="Name (optional)" aria-label="Name" />
+        <select name="media_type" aria-label="What would you transcribe">
+          <option value="">What would you transcribe?</option>
+          <option>Audio recordings</option>
+          <option>Video recordings</option>
+          <option>Both audio &amp; video</option>
+        </select>
+      </div>
+      <div class="row">
+        <select name="hours_per_month" aria-label="How many hours per month">
+          <option value="">Roughly how much per month?</option>
+          <option>A few hours</option>
+          <option>10–50 hours</option>
+          <option>50+ hours</option>
+        </select>
+        <input type="text" name="languages" placeholder="Languages (e.g. English, Hindi)" aria-label="Languages" />
+      </div>
+      <button class="btn primary submit" type="submit" id="wlbtn">Join the waitlist →</button>
+      <div class="msg" id="wlmsg" role="status" aria-live="polite"></div>
+      <div class="fine">We store only what you enter, in our own database. Your email is never shared or shown publicly.</div>
+    </form>
+  </div>
+</section>
+
 <section class="wrap">
   <h2>FAQ</h2>
-  <details><summary>Is my audio uploaded anywhere?</summary><p>No. Transcription runs entirely on your CPU. The only network request is the one-time model download you start yourself.</p></details>
+  <details open><summary>Is my audio uploaded anywhere?</summary><p>No. Transcription runs entirely on your CPU. The only network request is the one-time model download you start yourself.</p></details>
+  <details><summary>Is Sotto really free and open source?</summary><p>Yes — MIT-licensed and free forever. The core voice-to-text dictation is open source. The upcoming unlimited full-file transcription is an optional paid tier that funds development.</p></details>
   <details><summary>Does it need a GPU?</summary><p>No — it's tuned for CPU and runs on a normal laptop. You can optionally use an Intel iGPU.</p></details>
   <details><summary>Windows says "unknown publisher."</summary><p>The app is unsigned (certificates cost money; Sotto is free). Click <em>More info → Run anyway</em>, or build it from source.</p></details>
-  <details><summary>Which languages are supported?</summary><p>English and Hindi/Hinglish out of the box, with one-click switching. Set “Auto — all languages” for ~99 Whisper languages.</p></details>
+  <details><summary>Which languages are supported?</summary><p>English and Hindi/Hinglish out of the box, with one-click switching. Set "Auto — all languages" for ~99 Whisper languages.</p></details>
 </section>
 
 <footer class="wrap">
   <div><a href="https://github.com/smirk-dev/sotto">github.com/smirk-dev/sotto</a> · MIT licensed · built for people who write by voice</div>
-  <div class="kw">dictation · speech-to-text · voice typing · whisper · openvino · offline · windows · wispr flow alternative · hindi</div>
+  <div class="kw">voice to text · speech to text · dictation software · open source · offline · windows · wispr flow alternative · dragon alternative · hindi voice typing</div>
 </footer>
+
+<script>
+  // Supabase waitlist (anon key is public by design; row-level security allows insert only).
+  var SB_URL = "https://ygxirrnnfuorrqqfjbut.supabase.co";
+  var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlneGlycm5uZnVvcnJxcWZqYnV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwNTY3NTQsImV4cCI6MjA5ODYzMjc1NH0.b_EPRG9VY8QuzeVp7-NxuCQ4y9VfCKVTCVf-tGECrq4";
+  var form = document.getElementById("wlform");
+  var msg = document.getElementById("wlmsg");
+  var btn = document.getElementById("wlbtn");
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (form.company.value) return; // honeypot: silently ignore bots
+    var email = form.email.value.trim();
+    if (!email) return;
+    btn.disabled = true; btn.textContent = "Joining…"; msg.className = "msg"; msg.textContent = "";
+    var payload = {
+      email: email,
+      name: form.name.value.trim() || null,
+      media_type: form.media_type.value || null,
+      hours_per_month: form.hours_per_month.value || null,
+      languages: form.languages.value.trim() || null,
+      source: "landing",
+      user_agent: navigator.userAgent
+    };
+    fetch(SB_URL + "/rest/v1/waitlist", {
+      method: "POST",
+      headers: {
+        "apikey": SB_ANON,
+        "Authorization": "Bearer " + SB_ANON,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      if (r.status === 201 || r.status === 200 || r.status === 204) {
+        form.reset();
+        msg.className = "msg ok";
+        msg.textContent = "🎉 You're on the list! We'll email you when unlimited transcription is ready.";
+        btn.textContent = "Joined ✓";
+      } else if (r.status === 409) {
+        msg.className = "msg ok";
+        msg.textContent = "You're already on the list — thank you!";
+        btn.disabled = false; btn.textContent = "Join the waitlist →";
+      } else {
+        return r.text().then(function (t) { throw new Error(t || ("HTTP " + r.status)); });
+      }
+    }).catch(function (err) {
+      msg.className = "msg err";
+      msg.textContent = "Sorry, something went wrong. Please try again, or email us.";
+      btn.disabled = false; btn.textContent = "Join the waitlist →";
+      console.error("waitlist error:", err);
+    });
+  });
+</script>
 </body>
 </html>
