@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sotto — free, private, local dictation for Windows</title>
+<meta name="description" content="Sotto is a free, open-source, 100% offline dictation app for Windows. Hold a hotkey, speak, and accurate text is typed wherever your cursor is. Whisper on your CPU. English, Hindi & Hinglish. A private Wispr Flow alternative." />
+<link rel="icon" href="logo.png" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Sotto — free, private, local dictation for Windows" />
+<meta property="og:description" content="Hold a hotkey, speak, and text is typed wherever your cursor is. 100% local, free & open source. English + Hindi." />
+<meta property="og:image" content="https://smirk-dev.github.io/sotto/social-preview.png" />
+<meta property="og:url" content="https://smirk-dev.github.io/sotto/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Sotto — free, private, local dictation for Windows" />
+<meta name="twitter:description" content="Hold a hotkey, speak, and text is typed wherever your cursor is. 100% local, free & open source." />
+<meta name="twitter:image" content="https://smirk-dev.github.io/sotto/social-preview.png" />
+<style>
+  :root{--bg:#0b0b0f;--card:#15151b;--card2:#1a1a22;--text:#eaeaf0;--muted:#9a9aa6;--accent:#9d8cff;--accent2:#6e62b8;--border:#26262e;--ok:#7bc98a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:radial-gradient(1200px 600px at 80% -10%,rgba(157,140,255,.10),transparent),var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:0 24px}
+  a{color:var(--accent);text-decoration:none}
+  .btn{display:inline-block;padding:14px 26px;border-radius:12px;font-weight:650;font-size:16px;border:1px solid var(--border);transition:.15s}
+  .btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+  .btn.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn.ghost{color:var(--text);background:var(--card)}
+  .btn.ghost:hover{background:var(--card2)}
+  header{text-align:center;padding:70px 0 30px}
+  header img.logo{width:96px;height:96px;border-radius:22px}
+  h1{font-size:clamp(38px,6vw,60px);letter-spacing:-1.5px;margin:18px 0 6px;background:linear-gradient(180deg,#fff,#c9c4e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .tag{font-size:clamp(17px,2.6vw,21px);color:var(--muted);max-width:680px;margin:0 auto 26px}
+  .tag b{color:var(--text);font-weight:600}
+  .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+  .sub{color:var(--muted);font-size:14px}
+  .demo{display:block;width:100%;max-width:760px;margin:38px auto 8px;border-radius:16px;border:1px solid var(--border);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .demo-cap{text-align:center;color:var(--muted);font-size:14px;margin-bottom:20px}
+  section{padding:48px 0;border-top:1px solid var(--border)}
+  h2{font-size:28px;letter-spacing:-.5px;margin-bottom:22px;text-align:center}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .feat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+  .feat .ic{font-size:24px}
+  .feat h3{font-size:17px;margin:8px 0 4px}
+  .feat p{color:var(--muted);font-size:14.5px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;font-size:15px}
+  th,td{padding:12px 14px;text-align:center;border-bottom:1px solid var(--border)}
+  th:first-child,td:first-child{text-align:left;color:var(--muted)}
+  thead th{background:var(--card2)}
+  thead th:nth-child(2){color:var(--accent)}
+  tr:last-child td{border-bottom:none}
+  .steps{counter-reset:s;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 20px 20px 20px;position:relative}
+  .step:before{counter-increment:s;content:counter(s);display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;background:var(--accent2);color:#fff;border-radius:9px;font-weight:700;margin-bottom:10px}
+  .step h3{font-size:16px;margin-bottom:4px}
+  .step p{color:var(--muted);font-size:14px}
+  .step code{background:#000;padding:2px 7px;border-radius:6px;color:var(--accent);font-size:13px}
+  details{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+  summary{cursor:pointer;font-weight:600}
+  details p{color:var(--muted);margin-top:8px}
+  footer{text-align:center;color:var(--muted);font-size:13px;padding:40px 0 60px}
+  .kw{margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#55555f}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <img class="logo" src="logo.png" alt="Sotto logo" />
+  <h1>Sotto</h1>
+  <p class="tag"><b>Free, private, local dictation for Windows.</b> Hold a hotkey, speak, and
+  accurate text is typed wherever your cursor is — 100% on your device.</p>
+  <div class="cta">
+    <a class="btn primary" href="https://github.com/smirk-dev/sotto/releases/latest">⬇️ Download for Windows</a>
+    <a class="btn ghost" href="https://github.com/smirk-dev/sotto">★ Star on GitHub</a>
+  </div>
+  <div class="sub">No cloud · no account · no subscription · open source</div>
+  <img class="demo" src="demo.gif" alt="Sotto live dictation demo in English and Hindi" />
+  <div class="demo-cap">Live dictation in English and Hindi — text appears as you speak.</div>
+</header>
+
+<section class="wrap">
+  <h2>Why Sotto?</h2>
+  <div class="grid">
+    <div class="feat"><div class="ic">🔒</div><h3>100% private</h3><p>Whisper runs locally on your CPU. Audio never leaves your PC — no cloud, no telemetry.</p></div>
+    <div class="feat"><div class="ic">⌨️</div><h3>Types anywhere</h3><p>Terminals, Office, browsers, chat, IDEs — even elevated windows. Works where paste is blocked.</p></div>
+    <div class="feat"><div class="ic">🌍</div><h3>English + Hindi</h3><p>Auto-detected per phrase, with Hindi/Urdu correction. Dictate mixed-language meetings.</p></div>
+    <div class="feat"><div class="ic">⚡</div><h3>Live typing</h3><p>Toggle mode types as you speak — perfect for hands-free meeting notes.</p></div>
+    <div class="feat"><div class="ic">🧠</div><h3>Noise-robust</h3><p>A voice-activity gate ignores static and background noise instead of inventing text.</p></div>
+    <div class="feat"><div class="ic">🪶</div><h3>Free & light</h3><p>No GPU required. No fees, ever. ~400 lines of readable open-source Python.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Get started in 2 minutes</h2>
+  <div class="steps">
+    <div class="step"><h3>Download & unzip</h3><p>Grab <code>Sotto-windows-x64.zip</code> from Releases and unzip it.</p></div>
+    <div class="step"><h3>Run Sotto.exe</h3><p>SmartScreen may warn (unsigned) → <em>More info → Run anyway</em>.</p></div>
+    <div class="step"><h3>Download the model</h3><p>Settings → Model → Download (one-time, ~300 MB).</p></div>
+    <div class="step"><h3>Speak</h3><p>Hold <code>Ctrl + Win</code>, talk, release. Text appears at your cursor. 🎉</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>How it compares</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead><tr><th></th><th>Sotto</th><th>Wispr Flow</th><th>Voice Access</th><th>Talon</th></tr></thead>
+    <tbody>
+      <tr><td>Runs 100% offline</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Free</td><td>✅</td><td>💲</td><td>✅</td><td>partly</td></tr>
+      <tr><td>Open source</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Hindi / Hinglish</td><td>✅</td><td>✅</td><td>limited</td><td>❌</td></tr>
+      <tr><td>Type as you speak</td><td>✅</td><td>✅</td><td>⚠️</td><td>⚠️</td></tr>
+      <tr><td>No account needed</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>FAQ</h2>
+  <details><summary>Is my audio uploaded anywhere?</summary><p>No. Transcription runs entirely on your CPU. The only network request is the one-time model download you start yourself.</p></details>
+  <details><summary>Does it need a GPU?</summary><p>No — it's tuned for CPU and runs on a normal laptop. You can optionally use an Intel iGPU.</p></details>
+  <details><summary>Windows says "unknown publisher."</summary><p>The app is unsigned (certificates cost money; Sotto is free). Click <em>More info → Run anyway</em>, or build it from source.</p></details>
+  <details><summary>Which languages are supported?</summary><p>English and Hindi/Hinglish out of the box, with one-click switching. Set “Auto — all languages” for ~99 Whisper languages.</p></details>
+</section>
+
+<footer class="wrap">
+  <div><a href="https://github.com/smirk-dev/sotto">github.com/smirk-dev/sotto</a> · MIT licensed · built for people who write by voice</div>
+  <div class="kw">dictation · speech-to-text · voice typing · whisper · openvino · offline · windows · wispr flow alternative · hindi</div>
+</footer>
+</body>
+</html>

@@ -23,6 +23,10 @@ tests/wav/*.src.wav
 tests/*.selftest.txt
 tests/wav/*.selftest.txt
 tests/*.png
+docs/_*.png
+
+# Private promo drafts (not for the public repo)
+LAUNCH.md
 
 # OS
 Thumbs.db

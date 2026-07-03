@@ -1,0 +1,43 @@
+name: 🐛 Bug report
+description: Something isn't working
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, and what went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: false
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: e.g. Windows 11 23H2
+    validations:
+      required: true
+  - type: dropdown
+    id: model
+    attributes:
+      label: Model / language in use
+      options:
+        - small (multilingual) — default
+        - base.en
+        - small.en
+        - other / not sure
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log output (optional)
+      description: Paste relevant lines from %LOCALAPPDATA%\Sotto\app.log
+      render: shell
+    validations:
+      required: false

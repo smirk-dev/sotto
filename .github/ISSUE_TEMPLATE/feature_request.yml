@@ -1,0 +1,17 @@
+name: 💡 Feature request
+description: Suggest an idea
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the use case?
+      description: What are you trying to do that Sotto doesn't support yet?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed solution
+    validations:
+      required: false
