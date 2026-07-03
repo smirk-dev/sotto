@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How to Get Offline Voice-to-Text on Windows (Free, No Cloud) — 2026</title>
+<meta name="description" content="A step-by-step guide to setting up free, 100% offline voice-to-text dictation on Windows — no cloud, no subscription, no account. Runs OpenAI Whisper locally on your CPU." />
+<meta name="keywords" content="offline voice to text windows, local speech to text windows, free voice to text no subscription, private dictation app, offline dictation windows, whisper dictation, voice typing windows offline" />
+<meta name="author" content="Suryansh" />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#0b0b0f" />
+<link rel="canonical" href="https://smirk-dev.github.io/sotto/offline-voice-to-text-windows.html" />
+<link rel="icon" href="logo.png" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Sotto" />
+<meta property="og:title" content="How to Get Offline Voice-to-Text on Windows (Free, No Cloud)" />
+<meta property="og:description" content="Set up free, 100% offline voice-to-text dictation on Windows in a few minutes. No cloud, no subscription, no account." />
+<meta property="og:image" content="https://smirk-dev.github.io/sotto/social-preview.png" />
+<meta property="og:url" content="https://smirk-dev.github.io/sotto/offline-voice-to-text-windows.html" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="How to Get Offline Voice-to-Text on Windows (Free, No Cloud)" />
+<meta name="twitter:image" content="https://smirk-dev.github.io/sotto/social-preview.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to get offline voice-to-text on Windows",
+  "description": "Set up free, 100% offline voice-to-text dictation on Windows using Sotto, which runs OpenAI Whisper locally on your CPU.",
+  "totalTime": "PT5M",
+  "estimatedCost": { "@type": "MonetaryAmount", "currency": "USD", "value": "0" },
+  "supply": [{ "@type": "HowToSupply", "name": "A Windows 10 or 11 PC" }, { "@type": "HowToSupply", "name": "A microphone" }],
+  "step": [
+    { "@type": "HowToStep", "name": "Download Sotto", "text": "Download the free Sotto release ZIP from GitHub and unzip it.", "url": "https://smirk-dev.github.io/sotto/offline-voice-to-text-windows.html#step1" },
+    { "@type": "HowToStep", "name": "Run Sotto.exe", "text": "Run Sotto.exe. On the SmartScreen warning, click More info then Run anyway (the app is unsigned).", "url": "https://smirk-dev.github.io/sotto/offline-voice-to-text-windows.html#step2" },
+    { "@type": "HowToStep", "name": "Download the local model", "text": "Open Settings and download the Whisper model once (about 300 MB). After this, everything runs offline.", "url": "https://smirk-dev.github.io/sotto/offline-voice-to-text-windows.html#step3" },
+    { "@type": "HowToStep", "name": "Dictate anywhere", "text": "Hold Ctrl+Win, speak, and release. Accurate text is typed at your cursor in any app.", "url": "https://smirk-dev.github.io/sotto/offline-voice-to-text-windows.html#step4" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Sotto", "item": "https://smirk-dev.github.io/sotto/" },
+    { "@type": "ListItem", "position": 2, "name": "Offline voice-to-text on Windows", "item": "https://smirk-dev.github.io/sotto/offline-voice-to-text-windows.html" }
+  ]
+}
+</script>
+<style>
+  :root{--bg:#0b0b0f;--card:#15151b;--card2:#1a1a22;--text:#eaeaf0;--muted:#9a9aa6;--accent:#9d8cff;--accent2:#6e62b8;--border:#26262e;--ok:#7bc98a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:radial-gradient(1200px 600px at 80% -10%,rgba(157,140,255,.10),transparent),var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  nav{border-bottom:1px solid var(--border);background:rgba(11,11,15,.8);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
+  nav .wrap{display:flex;align-items:center;gap:16px;padding:12px 24px}
+  nav img{width:30px;height:30px;border-radius:8px}
+  nav b{font-size:17px}
+  nav .sp{flex:1}
+  nav a{color:var(--muted);font-size:14px}
+  .crumb{color:var(--muted);font-size:13px;padding:22px 0 0}
+  h1{font-size:clamp(28px,5vw,42px);letter-spacing:-1px;margin:14px 0 10px;background:linear-gradient(180deg,#fff,#c9c4e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .meta{color:var(--muted);font-size:14px;margin-bottom:8px}
+  .prose{font-size:17px;padding:8px 0 20px}
+  .prose h2{font-size:24px;letter-spacing:-.4px;margin:34px 0 12px}
+  .prose h3{font-size:19px;margin:26px 0 6px}
+  .prose p{margin:12px 0;color:#dcdce4}
+  .prose ul,.prose ol{margin:12px 0 12px 22px;color:#dcdce4}
+  .prose li{margin:6px 0}
+  .prose strong{color:#fff}
+  .prose code{background:#000;padding:2px 7px;border-radius:6px;color:var(--accent);font-size:14px}
+  .steps{counter-reset:s;display:grid;gap:14px;margin:18px 0}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px 18px 60px;position:relative}
+  .step:before{counter-increment:s;content:counter(s);position:absolute;left:18px;top:18px;display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;background:var(--accent2);color:#fff;border-radius:9px;font-weight:700}
+  .step h3{margin:0 0 4px;font-size:18px}
+  .step p{margin:0;color:var(--muted)}
+  .cta{background:linear-gradient(180deg,#181527,#141019);border:1px solid #302a4a;border-radius:16px;padding:26px;margin:30px 0;text-align:center}
+  .btn{display:inline-block;padding:13px 24px;border-radius:12px;font-weight:650;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#fff;margin:6px 4px}
+  .btn:hover{filter:brightness(1.08);text-decoration:none}
+  .btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--border)}
+  footer{text-align:center;color:var(--muted);font-size:13px;padding:40px 0 60px;border-top:1px solid var(--border);margin-top:30px}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><img src="logo.png" alt="Sotto logo" /><b>Sotto</b><span class="sp"></span>
+  <a href="./">Home</a><a href="wispr-flow-alternatives.html">Alternatives</a><a href="https://github.com/smirk-dev/sotto">GitHub</a></div></nav>
+
+<article class="wrap">
+  <div class="crumb"><a href="./">Sotto</a> › Offline voice-to-text on Windows</div>
+  <h1>How to Get Offline Voice-to-Text on Windows (Free, No Cloud)</h1>
+  <div class="meta">A 5-minute setup guide · No subscription, no account, no internet after setup · Updated 2026</div>
+
+  <div class="prose">
+    <p>Most voice-to-text tools send your microphone audio to a company's servers, require an account,
+    and charge a monthly fee. You don't need any of that. Thanks to <strong>OpenAI's Whisper</strong>
+    model running locally, you can get accurate dictation on Windows that is <strong>100% offline,
+    completely free, and private</strong> — your voice never leaves your PC.</p>
+
+    <p>This guide uses <a href="./"><strong>Sotto</strong></a>, a free, open-source (MIT) dictation app
+    that runs Whisper on your CPU. No GPU required. Here's the whole setup.</p>
+
+    <h2>Why offline (local) voice-to-text?</h2>
+    <ul>
+      <li><strong>Privacy:</strong> audio is transcribed on your machine — nothing is uploaded, logged, or sold.</li>
+      <li><strong>Free forever:</strong> no per-minute pricing, no subscription.</li>
+      <li><strong>Works without internet:</strong> on a plane, in a secure environment, anywhere.</li>
+      <li><strong>No account:</strong> nothing to sign up for; nothing to cancel.</li>
+    </ul>
+
+    <h2>What you need</h2>
+    <ul>
+      <li>A Windows 10 or 11 PC (a normal laptop CPU is fine — no GPU needed).</li>
+      <li>A microphone (a built-in laptop mic works).</li>
+      <li>About 300 MB of disk for the one-time model download.</li>
+    </ul>
+
+    <h2>Step-by-step</h2>
+    <div class="steps">
+      <div class="step" id="step1"><h3>Download Sotto</h3><p>Grab <code>Sotto-windows-x64.zip</code> from the <a href="https://github.com/smirk-dev/sotto/releases/latest">latest release</a> and unzip it anywhere.</p></div>
+      <div class="step" id="step2"><h3>Run Sotto.exe</h3><p>Double-click <code>Sotto.exe</code>. Because the app is unsigned (code-signing certificates cost money; Sotto is free), Windows SmartScreen shows a warning — click <em>More info → Run anyway</em>. A small icon appears in your system tray.</p></div>
+      <div class="step" id="step3"><h3>Download the local model (one time)</h3><p>Open <em>Settings</em> from the tray, choose a Whisper model, and click <em>Download</em> (~300 MB). This is the <strong>only</strong> network request Sotto ever makes. After it finishes, unplug the internet if you like — everything runs locally.</p></div>
+      <div class="step" id="step4"><h3>Dictate anywhere</h3><p>Place your cursor in any app — Word, a browser, a terminal, chat, your IDE — then <strong>hold <code>Ctrl + Win</code></strong>, speak, and release. Your words are typed at the cursor. Prefer hands-free? Turn on toggle mode to type live as you speak. 🎉</p></div>
+    </div>
+
+    <h2>Tips for best accuracy</h2>
+    <ul>
+      <li>Use a decent mic and reduce background noise. Sotto has a voice-activity gate that ignores static, but a clean signal always helps.</li>
+      <li>Pick the model that fits your machine: smaller = faster, larger = more accurate. The default balances both on a typical CPU.</li>
+      <li>Speak in natural phrases rather than one word at a time — Whisper uses context to get punctuation and homophones right.</li>
+      <li>For English + Hindi/Hinglish, leave language on auto, or lock a language in Settings. See the <a href="hindi-voice-typing-windows.html">Hindi voice typing guide</a>.</li>
+    </ul>
+
+    <h2>Is this really free and private?</h2>
+    <p>Yes. Sotto is MIT-licensed and open source — you can read every line on
+    <a href="https://github.com/smirk-dev/sotto">GitHub</a>. There's no telemetry and no account. The
+    transcription happens entirely on your CPU via OpenVINO-optimized Whisper. The only time it touches
+    the network is the one-time model download you start yourself.</p>
+
+    <div class="cta">
+      <h3 style="margin-bottom:8px">Get offline dictation now</h3>
+      <p style="color:var(--muted);margin-bottom:14px">Free, open source, 100% on your device.</p>
+      <a class="btn" href="https://github.com/smirk-dev/sotto/releases/latest">⬇️ Download for Windows</a>
+      <a class="btn ghost" href="https://github.com/smirk-dev/sotto">★ Star on GitHub</a>
+    </div>
+
+    <h2>Related guides</h2>
+    <ul>
+      <li><a href="wispr-flow-alternatives.html">Best open-source Wispr Flow alternatives for Windows</a></li>
+      <li><a href="hindi-voice-typing-windows.html">Free Hindi &amp; Hinglish voice typing on Windows</a></li>
+    </ul>
+  </div>
+</article>
+
+<footer class="wrap">
+  <div><a href="./">Sotto</a> · <a href="https://github.com/smirk-dev/sotto">GitHub</a> · MIT licensed · free, private, local dictation for Windows</div>
+</footer>
+</body>
+</html>
