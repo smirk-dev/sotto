@@ -1,0 +1,2 @@
+APP_NAME = "Sotto"
+APP_VERSION = "1.0.0"

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual env (machine-specific, huge)
+.venv/
+venv/
+
+# PyInstaller build output
+build/
+dist/
+*.spec.bak
+
+# Editor / tooling
+.claude/
+.vscode/
+.idea/
+
+# Generated test artifacts
+tests/wav/*.src.wav
+tests/*.selftest.txt
+tests/wav/*.selftest.txt
+tests/*.png
+
+# OS
+Thumbs.db
+desktop.ini
