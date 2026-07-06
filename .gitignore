@@ -17,6 +17,7 @@ dist/
 .claude/
 .vscode/
 .idea/
+/promo
 
 # Generated test artifacts
 tests/wav/*.src.wav
