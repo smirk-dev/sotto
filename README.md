@@ -135,8 +135,13 @@ request is the one-time model download you start yourself.
 
 **Does it need a GPU?** No — it's tuned for CPU. (You can optionally run on an Intel iGPU.)
 
-**Why does it type into elevated apps sometimes fail?** Windows blocks normal apps from sending
-keys to Administrator windows. Launch the **"Sotto (administrator)"** shortcut to type everywhere.
+**The hotkey does nothing — or text isn't typed — in one specific app (often a terminal).** That
+app is running **as Administrator** while Sotto isn't. Windows UIPI blocks a normal-privilege app
+from *both* typing into *and* seeing hotkeys destined for a higher-privilege window, so the overlay
+won't appear while it's focused and dictation lands nowhere (Sotto falls back to copying the text to
+your clipboard and shows *"run Sotto as admin"*). Everything at your normal level — Word, browsers,
+chat, Obsidian — keeps working. Fix: run Sotto elevated — see
+[Dictating into apps that run as Administrator](#dictating-into-apps-that-run-as-administrator).
 
 **Windows says "unknown publisher."** The app is unsigned (code-signing certificates cost money;
 Sotto is free). Click *More info → Run anyway*, or build it yourself.
@@ -146,8 +151,35 @@ pick a specific one; Whisper supports ~99 languages.
 
 ## Dictating into apps that run as Administrator
 
-Use the **"Sotto (administrator)"** Start-menu shortcut (one UAC prompt per launch) so Sotto can
-type into elevated windows too.
+If an app runs **elevated** (as Administrator) and Sotto doesn't, Windows **UIPI** stops Sotto from
+interacting with it: injected keystrokes are silently dropped *and* the global hotkey isn't seen
+while that window is focused (the overlay only reappears once you click a normal-privilege window).
+The most common case is an **elevated terminal** — e.g. Windows Terminal, or a VS Code integrated
+terminal when VS Code itself was started as Administrator. When it happens, Sotto shows *"run Sotto
+as admin — text copied"* and puts the transcript on your clipboard so nothing is lost.
+
+Two fixes:
+
+- **Run Sotto elevated.** Launch the **"Sotto (administrator)"** Start-menu shortcut (one UAC prompt
+  per launch) so Sotto sits at the same integrity level and can type everywhere. To start it
+  elevated automatically at logon **without** a UAC prompt, register a Task Scheduler task that runs
+  it with highest privileges:
+
+  ```powershell
+  $exe  = "$env:LOCALAPPDATA\Programs\Sotto\Sotto.exe"
+  $user = "$env:USERDOMAIN\$env:USERNAME"
+  Register-ScheduledTask -TaskName "Sotto (admin autostart)" -Force `
+    -Action    (New-ScheduledTaskAction -Execute $exe) `
+    -Trigger   (New-ScheduledTaskTrigger -AtLogOn -User $user) `
+    -Principal (New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Highest) `
+    -Settings  (New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero))
+  ```
+
+  If you do this, turn **off** "Start Sotto when Windows starts" in Settings (or delete
+  `…\Startup\Sotto.lnk`) so the non-elevated copy doesn't race the task at logon.
+
+- **Or just don't run the other app as Administrator.** If you don't specifically need it elevated,
+  launch it normally and Sotto dictates into it like anywhere else — no elevated Sotto required.
 
 ## Build from source
 

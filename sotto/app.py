@@ -28,6 +28,11 @@ MIN_UTTERANCE_S = 0.35
 # (min seconds before a commit, max before a forced cut)
 STREAM_MIN_S, STREAM_MAX_S = 4, 24
 BATCH_MIN_S, BATCH_MAX_S = 14, 26
+# Safety net: if a session's stop event is missed (e.g. the stop key was pressed
+# while an elevated window had focus, so our hook never saw it), the app would
+# record forever and every later hotkey would no-op on the `recording` guard.
+# Auto-stop any session that runs past this.
+MAX_SESSION_S = 20 * 60
 
 
 def make_icon(state="idle") -> QIcon:
@@ -74,6 +79,11 @@ class SottoApp(QObject):
         self.overlay = OverlayPill()
         self.settings = SettingsWindow(self.cfg)
         self.historyw = HistoryWindow()
+
+        # auto-stop a session whose stop event was missed (see MAX_SESSION_S)
+        self._watchdog = QTimer(self)
+        self._watchdog.setSingleShot(True)
+        self._watchdog.timeout.connect(self._on_watchdog)
 
         self.engine = Engine(on_state=self.sig_engine_state.emit)
         self.recorder = Recorder(on_level=self.sig_level.emit)
@@ -204,6 +214,7 @@ class SottoApp(QObject):
         self._stream_any_ok = False
         min_s, max_s = (STREAM_MIN_S, STREAM_MAX_S) if self._streaming else (BATCH_MIN_S, BATCH_MAX_S)
         self.recording = True
+        self._watchdog.start(MAX_SESSION_S * 1000)
         log.info("dictation started (mode=%s streaming=%s)", mode, self._streaming)
         self._t0 = time.monotonic()
         self.session = DictationSession(self.engine, self.recorder,
@@ -241,6 +252,7 @@ class SottoApp(QObject):
         self._stream_any_ok = self._stream_any_ok or ok
 
     def stop_dictation(self):
+        self._watchdog.stop()
         log.info("stop_dictation (recording=%s)", self.recording)
         if not self.recording:
             return
@@ -261,6 +273,17 @@ class SottoApp(QObject):
         threading.Thread(target=self._finish_worker,
                          args=(session, audio, duration, self._feeder),
                          daemon=True).start()
+
+    def _on_watchdog(self):
+        """A session outlived MAX_SESSION_S — its stop event was almost certainly
+        missed (e.g. released over an elevated window). Commit and stop so hotkeys
+        aren't wedged on the `recording` guard forever."""
+        if not self.recording:
+            return
+        log.warning("session auto-stopped after %ds (stop event missed?)", MAX_SESSION_S)
+        self.tray.showMessage(APP_NAME, "Dictation auto-stopped (was left running)",
+                              make_icon("idle"), 2500)
+        self.stop_dictation()
 
     def _finish_worker(self, session, audio, duration, feeder):
         try:
@@ -298,7 +321,11 @@ class SottoApp(QObject):
             self.overlay.show_state("error", "no speech detected")
             return
         if not ok:
-            self.overlay.show_state("error", "couldn't type — copied to clipboard")
+            if inject.foreground_injection_blocked():
+                msg = "run Sotto as admin — text copied"
+            else:
+                msg = "couldn't type — copied to clipboard"
+            self.overlay.show_state("error", msg)
             inject._set_clipboard_text(text)
         else:
             self.overlay.show_state("inserted")

@@ -11,6 +11,7 @@ import time
 
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
 
 # 64-bit safety: handle/pointer returns must not be truncated to c_int
 user32.GetClipboardData.restype = wt.HANDLE
@@ -46,6 +47,84 @@ class INPUT(ctypes.Structure):
 
 
 INJECT_TAG = 0x534F5454  # "SOTT": marks our own SendInput events (see hotkey.py)
+
+
+# ---------- integrity / UIPI ----------
+# Windows forbids a normal-privilege process from sending input to (or hooking
+# keys destined for) a higher-integrity window. When the focused app is elevated
+# and Sotto is not, SendInput reports success but the keystrokes are silently
+# dropped. We detect that up front so the app can fail loudly (and fall back to
+# the clipboard) instead of appearing to type into thin air.
+
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+TOKEN_QUERY = 0x0008
+_TokenElevation = 20
+ERROR_ACCESS_DENIED = 5
+
+user32.GetForegroundWindow.restype = wt.HWND
+user32.GetWindowThreadProcessId.restype = wt.DWORD
+user32.GetWindowThreadProcessId.argtypes = [wt.HWND, ctypes.POINTER(wt.DWORD)]
+kernel32.OpenProcess.restype = wt.HANDLE
+kernel32.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
+kernel32.GetCurrentProcess.restype = wt.HANDLE
+kernel32.CloseHandle.argtypes = [wt.HANDLE]
+advapi32.OpenProcessToken.argtypes = [wt.HANDLE, wt.DWORD, ctypes.POINTER(wt.HANDLE)]
+advapi32.GetTokenInformation.argtypes = [wt.HANDLE, ctypes.c_int, ctypes.c_void_p,
+                                         wt.DWORD, ctypes.POINTER(wt.DWORD)]
+
+_self_elevated = None
+
+
+def _token_elevated(proc_handle):
+    """Elevation (bool) for an open process handle, or None if its token is unreadable."""
+    tok = wt.HANDLE()
+    if not advapi32.OpenProcessToken(proc_handle, TOKEN_QUERY, ctypes.byref(tok)):
+        return None
+    try:
+        elev = wt.DWORD(0)
+        ret = wt.DWORD(0)
+        if not advapi32.GetTokenInformation(tok, _TokenElevation, ctypes.byref(elev), 4,
+                                            ctypes.byref(ret)):
+            return None
+        return bool(elev.value)
+    finally:
+        kernel32.CloseHandle(tok)
+
+
+def self_elevated() -> bool:
+    global _self_elevated
+    if _self_elevated is None:
+        _self_elevated = bool(_token_elevated(kernel32.GetCurrentProcess()))
+    return _self_elevated
+
+
+def foreground_injection_blocked() -> bool:
+    """True when the focused window belongs to a higher-integrity (e.g. elevated)
+    process that Windows UIPI will not let a normal Sotto type into. Always False
+    when Sotto itself is elevated — it can type everywhere."""
+    try:
+        if self_elevated():
+            return False
+        hwnd = user32.GetForegroundWindow()
+        if not hwnd:
+            return False
+        pid = wt.DWORD(0)
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if not pid.value:
+            return False
+        ctypes.set_last_error(0)
+        h = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+        if not h:
+            # a same-user, same-integrity window opens fine; access-denied here
+            # means the foreground sits at a higher integrity level (elevated).
+            return ctypes.get_last_error() == ERROR_ACCESS_DENIED
+        try:
+            elevated = _token_elevated(h)
+            return True if elevated is None else elevated
+        finally:
+            kernel32.CloseHandle(h)
+    except Exception:
+        return False
 
 
 def _key_event(vk=0, scan=0, flags=0):
@@ -161,6 +240,11 @@ def paste_text(text: str):
 
 
 def insert_text(text: str, mode: str = "type", paste_threshold: int = 400) -> bool:
+    # UIPI would silently swallow our keystrokes (and the clipboard-paste Ctrl+V)
+    # into an elevated window — report failure so the caller can copy to clipboard
+    # and tell the user, instead of pretending the text was typed.
+    if foreground_injection_blocked():
+        return False
     wait_modifiers_released()
     if mode == "paste" or len(text) > paste_threshold:
         # trailing newlines must be real Enter presses (pasted \n doesn't submit)

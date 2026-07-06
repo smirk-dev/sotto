@@ -160,3 +160,37 @@ Verified (tests/test_robustness.py, test_streaming.py, full suite all pass):
 CAVEAT unchanged: no Hindi TTS voice on this machine, so native-Hindi accuracy is validated by
 the code path (Devanagari output, Urdu correction) + Whisper's known Hindi ability, not by a
 real Hindi recording. The user should confirm with actual spoken Hindi.
+
+## v1.3 — elevated-target (UIPI) edge case
+
+Reported: inside an **elevated** app (a VS Code integrated terminal started as Administrator) the
+hotkey showed no overlay and nothing was typed, while every normal-privilege app (Obsidian, Claude
+Desktop, browsers) worked. Confirmed on-machine via process-token elevation + parent-chain walk:
+`Sotto.exe` was non-elevated; the terminal's host chain (`Code.exe → … → powershell`) was elevated.
+Windows **UIPI** blocks a normal-privilege process from *both* injecting input into and receiving
+low-level keyboard-hook events for a higher-integrity window — so `WH_KEYBOARD_LL` never delivered
+the chord while the terminal was focused (no `start_dictation`), and `SendInput` was silently
+dropped (it still reports success, so no error surfaced — the app thought it had typed). A
+toggle-stop pressed while the elevated terminal had focus was likewise missed, wedging the running
+instance in `recording=True`, which then no-ops every later hotkey on the guard in `start_dictation`
+(the log showed an unpaired `dictation started` as the last line).
+
+Fixes shipped:
+1. **UIPI detection** (sotto/inject.py): `foreground_injection_blocked()` compares the foreground
+   window's process elevation to Sotto's (OpenProcess `PROCESS_QUERY_LIMITED_INFORMATION` +
+   `GetTokenInformation`/`TokenElevation`; an unreadable/access-denied token is treated as
+   higher-integrity). `insert_text()` returns False when blocked instead of pretending success, so
+   the existing clipboard fallback fires and the pill shows "run Sotto as admin — text copied".
+   Short-circuits to False when Sotto is itself elevated (it can type everywhere).
+2. **Session watchdog** (sotto/app.py, `MAX_SESSION_S` = 20 min): a single-shot QTimer started with
+   each session and cleared in `stop_dictation` auto-stops any session whose stop event was missed,
+   so a wedged recording can no longer block all hotkeys indefinitely.
+3. **Docs**: README FAQ + "Dictating into apps that run as Administrator" now cover the hotkey (not
+   just typing) symptom, name the elevated-terminal case, and give a Task Scheduler recipe for
+   silent elevated autostart at logon.
+
+CAVEAT: the elevation check + watchdog only take effect once the packaged build is rebuilt
+(PyInstaller) and reinstalled over `%LOCALAPPDATA%\Programs\Sotto`; the scheduled-task autostart
+works independently of the rebuild.
+
+## v1.3 status: COMPLETE (source + docs; rebuild pending on the user's machine)
