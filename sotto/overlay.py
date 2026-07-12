@@ -4,7 +4,7 @@ States: listening (live bars), transcribing (pulsing dots), inserted (check),
 error (message). The window has WS_EX_NOACTIVATE so it can never steal focus.
 """
 
-import ctypes
+import sys
 
 from PySide6.QtCore import Qt, QTimer, QRectF
 from PySide6.QtGui import QColor, QPainter, QPen, QFont
@@ -38,6 +38,12 @@ class OverlayPill(QWidget):
         self._hide_timer.timeout.connect(self.hide)
 
     def _apply_noactivate(self):
+        # Windows: set WS_EX_NOACTIVATE so the pill can never steal focus. On other
+        # platforms the Qt flags in __init__ (Tool | WindowStaysOnTop |
+        # WA_ShowWithoutActivating | NoFocus) already achieve this.
+        if sys.platform != "win32":
+            return
+        import ctypes
         hwnd = int(self.winId())
         user32 = ctypes.WinDLL("user32")
         user32.GetWindowLongPtrW.restype = ctypes.c_longlong

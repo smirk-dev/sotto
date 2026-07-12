@@ -1,0 +1,57 @@
+# Maintainer: Suryansh <suryansh@inboxkit.com>
+pkgname=sotto
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Free, private, local dictation — hold a hotkey, speak, and text is typed at your cursor (offline Whisper via OpenVINO)"
+arch=('x86_64')
+url="https://github.com/smirk-dev/sotto"
+license=('MIT')
+# Runtime: python + PortAudio for capture; a typing backend per session type.
+depends=('python' 'portaudio' 'xdotool' 'wtype' 'wl-clipboard')
+optdepends=('ydotool: text-injection fallback for GNOME-Wayland (needs ydotoold + /dev/uinput)')
+makedepends=('python-pip')
+install="$pkgname.install"
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # run `updpkgsums` before publishing a tagged release
+
+_appdir="/opt/$pkgname"
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+
+  # Self-contained venv: openvino-genai (and the pinned OpenVINO stack) are not in
+  # the Arch repos, so we vendor the Python dependencies. --copies makes the tree
+  # relocatable from the build dir to /opt/sotto.
+  python -m venv --copies "$srcdir/venv"
+  "$srcdir/venv/bin/python" -m pip install --upgrade pip wheel
+  "$srcdir/venv/bin/python" -m pip install \
+    numpy sounddevice PySide6-Essentials evdev \
+    openvino openvino-genai huggingface_hub hf_xet
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+
+  # vendored interpreter + deps
+  install -d "$pkgdir$_appdir"
+  cp -a "$srcdir/venv" "$pkgdir$_appdir/venv"
+
+  # application source (imported as `python -m sotto` via PYTHONPATH below)
+  cp -a sotto "$pkgdir$_appdir/sotto"
+
+  # /usr/bin launcher
+  install -d "$pkgdir/usr/bin"
+  cat > "$pkgdir/usr/bin/$pkgname" <<EOF
+#!/bin/sh
+exec env PYTHONPATH="$_appdir" "$_appdir/venv/bin/python" -m sotto "\$@"
+EOF
+  chmod 755 "$pkgdir/usr/bin/$pkgname"
+
+  # desktop entry + icon
+  install -Dm644 packaging/arch/sotto.desktop \
+    "$pkgdir/usr/share/applications/$pkgname.desktop"
+  install -Dm644 build_assets/sotto.png \
+    "$pkgdir/usr/share/icons/hicolor/256x256/apps/$pkgname.png"
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

@@ -1,0 +1,29 @@
+_notice() {
+  cat <<'EOF'
+
+Sotto is installed. Two one-time steps for the global push-to-talk hotkey:
+
+  1. Add your user to the `input` group so Sotto can read the keyboard:
+
+         sudo usermod -aG input "$USER"
+
+     Then log out and back in (or reboot) for it to take effect.
+
+  2. Typing into apps uses a backend matched to your session:
+       - X11 ...................... xdotool   (installed)
+       - Wayland (wlroots/KDE) .... wtype     (installed)
+       - GNOME-Wayland ............ install `ydotool` and run ydotoold; or use an X11 session
+
+On first launch, open Settings → Model & language → Download (one-time, ~300 MB).
+Then hold Ctrl+Super, speak, and release. Enjoy!
+
+EOF
+}
+
+post_install() {
+  _notice
+}
+
+post_upgrade() {
+  _notice
+}

@@ -4,7 +4,7 @@
 
 # Sotto
 
-### Free, private, local dictation for Windows — hold a hotkey, speak, and accurate text is typed wherever your cursor is.
+### Free, private, local dictation for Windows & Linux — hold a hotkey, speak, and accurate text is typed wherever your cursor is.
 
 A fully offline, open-source alternative to cloud dictation tools like Wispr Flow.
 **No cloud. No account. No subscription. No telemetry.** Your voice never leaves your PC.
@@ -13,6 +13,8 @@ A fully offline, open-source alternative to cloud dictation tools like Wispr Flo
 &nbsp;
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#install-in-2-minutes)
+&nbsp;
+[![Linux](https://img.shields.io/badge/Linux-X11%20%7C%20Wayland-1793D1?style=for-the-badge&logo=linux&logoColor=white)](#linux-arch)
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/smirk-dev/sotto?style=social) &nbsp;
 ![GitHub all releases](https://img.shields.io/github/downloads/smirk-dev/sotto/total?label=downloads&color=7BC98A) &nbsp;
@@ -60,6 +62,28 @@ workflow while keeping **100% of the audio on your own machine** — for free, f
 
 > Prefer to build it yourself? See [Build from source](#build-from-source). It's ~400 lines of
 > readable Python.
+
+## Linux (Arch)
+
+Sotto runs natively on Linux (X11 **and** Wayland) with the same press-to-talk workflow.
+
+```bash
+git clone https://github.com/smirk-dev/sotto && cd sotto/packaging/arch
+makepkg -si                       # or: publish to the AUR and `yay -S sotto`
+sudo usermod -aG input "$USER"    # one-time: lets the hotkey read the keyboard
+# log out / back in, then launch "Sotto" from your app menu
+```
+
+The global hotkey is read from `/dev/input` via **evdev** (hence the `input` group),
+and typing is delegated to **`xdotool`** (X11) or **`wtype`** (Wayland) so Unicode —
+including **Hindi/Devanagari** — is emitted correctly. All dependencies are pulled in
+by the package. See [`packaging/arch/`](packaging/arch/) for details.
+
+**Good to know on Linux:**
+- Prefer the **hold chord** (default `Ctrl+Super`) or a function-key toggle (`F10`) —
+  the toggle combo's trigger key isn't suppressed from the focused app.
+- **GNOME-Wayland** lacks the virtual-keyboard protocol `wtype` needs: use an **X11
+  session** or install **`ydotool`** as a fallback.
 
 ## How it compares
 

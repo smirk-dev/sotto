@@ -1,10 +1,25 @@
-"""Config, paths, stats. Everything lives under %LOCALAPPDATA%\\Sotto."""
+"""Config, paths, stats.
+
+All app data lives under one directory: %LOCALAPPDATA%\\Sotto on Windows,
+$XDG_DATA_HOME/sotto (default ~/.local/share/sotto) elsewhere.
+"""
 
 import json
 import os
+import sys
 import threading
 
-APP_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "Sotto")
+
+def _app_dir():
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        return os.path.join(base, "Sotto")
+    base = os.environ.get("XDG_DATA_HOME") or os.path.join(os.path.expanduser("~"),
+                                                           ".local", "share")
+    return os.path.join(base, "sotto")
+
+
+APP_DIR = _app_dir()
 MODELS_DIR = os.path.join(APP_DIR, "models")
 CONFIG_PATH = os.path.join(APP_DIR, "config.json")
 HISTORY_PATH = os.path.join(APP_DIR, "history.jsonl")

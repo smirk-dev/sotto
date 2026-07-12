@@ -1,15 +1,23 @@
-"""Subtle start/stop blips, generated once and played via winsound (async)."""
+"""Subtle start/stop blips, generated once and played asynchronously.
+
+Windows uses winsound; other platforms play the generated WAV through
+sounddevice (already a dependency for mic capture).
+"""
 
 import math
 import os
 import struct
+import sys
+import threading
 import wave
-import winsound
 
 from .config import APP_DIR
 
 _SOUND_DIR = os.path.join(APP_DIR, "sounds")
 RATE = 22050
+
+if sys.platform == "win32":
+    import winsound
 
 
 def _write_blip(path, f0, f1, ms=110, vol=0.16):
@@ -39,10 +47,24 @@ def ensure_sounds():
     return start, stop
 
 
+def _play_sounddevice(path):
+    try:
+        import numpy as np
+        import sounddevice as sd
+        with wave.open(path, "rb") as w:
+            data = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16)
+        sd.play(data, RATE)  # non-blocking; plays on the default output device
+    except Exception:
+        pass
+
+
 def play(which: str):
     start, stop = ensure_sounds()
     path = start if which == "start" else stop
-    try:
-        winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
-    except RuntimeError:
-        pass
+    if sys.platform == "win32":
+        try:
+            winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+        except RuntimeError:
+            pass
+    else:
+        threading.Thread(target=_play_sounddevice, args=(path,), daemon=True).start()

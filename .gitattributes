@@ -1,0 +1,7 @@
+# Packaging and shell files must stay LF or they break on Linux (Arch makepkg,
+# the .install scriptlets, and the .desktop entry are parsed by POSIX tools).
+packaging/** text eol=lf
+*.desktop text eol=lf
+*.install text eol=lf
+PKGBUILD text eol=lf
+.SRCINFO text eol=lf

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Sotto
+GenericName=Dictation
+Comment=Free, private, local dictation — hold a hotkey and speak
+Exec=sotto
+Icon=sotto
+Terminal=false
+Categories=Utility;AudioVideo;Accessibility;
+Keywords=dictation;speech;voice;transcribe;whisper;stt;
+StartupNotify=false

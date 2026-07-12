@@ -6,6 +6,7 @@ callback discards audio immediately; frames are kept only between begin() and
 end().
 """
 
+import sys
 import threading
 
 import numpy as np
@@ -14,14 +15,22 @@ import sounddevice as sd
 SAMPLE_RATE = 16000
 BLOCK = 1600  # 100 ms
 
+# Prefer one host API per platform so the picker isn't cluttered with duplicates
+# (WASAPI on Windows; PulseAudio/PipeWire on Linux, avoiding raw-ALSA dupes).
+_PREFERRED_APIS = ("WASAPI",) if sys.platform == "win32" else ("PipeWire", "Pulse", "PulseAudio")
+
 
 def list_input_devices():
-    """Input devices of the WASAPI host API (full names, no MME duplicates)."""
+    """Input devices of the preferred host API for this platform (full names)."""
     apis = sd.query_hostapis()
-    wasapi = next((i for i, a in enumerate(apis) if "WASAPI" in a["name"]), None)
+    preferred = None
+    for name in _PREFERRED_APIS:
+        preferred = next((i for i, a in enumerate(apis) if name.lower() in a["name"].lower()), None)
+        if preferred is not None:
+            break
     devices = []
     for i, d in enumerate(sd.query_devices()):
-        if d["max_input_channels"] > 0 and (wasapi is None or d["hostapi"] == wasapi):
+        if d["max_input_channels"] > 0 and (preferred is None or d["hostapi"] == preferred):
             devices.append((i, d["name"]))
     return devices
 

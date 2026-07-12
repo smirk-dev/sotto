@@ -25,3 +25,8 @@ out = os.path.join(HERE, "sotto.ico")
 imgs[-1].save(out, format="ICO", sizes=[(i.width, i.height) for i in imgs],
               append_images=imgs[:-1])
 print("wrote", out)
+
+# 256x256 PNG for the Linux .desktop / hicolor icon theme
+png = os.path.join(HERE, "sotto.png")
+draw(256).save(png, format="PNG")
+print("wrote", png)

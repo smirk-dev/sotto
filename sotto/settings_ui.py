@@ -1,6 +1,7 @@
 """Settings window: frameless dark card, single scrolling column of sections."""
 
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -43,7 +44,7 @@ def _make_shortcut(lnk_path, target, workdir):
                    creationflags=subprocess.CREATE_NO_WINDOW, check=False)
 
 
-def set_start_with_windows(enable: bool):
+def _set_autostart_windows(enable: bool):
     if enable:
         exe = sys.executable
         # packaged: Sotto.exe itself; dev: pythonw + -m sotto
@@ -55,6 +56,41 @@ def set_start_with_windows(enable: bool):
             os.remove(STARTUP_LNK)
         except OSError:
             pass
+
+
+# freedesktop autostart: a .desktop dropped here is launched at login.
+AUTOSTART_DIR = os.path.join(
+    os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config"),
+    "autostart")
+AUTOSTART_DESKTOP = os.path.join(AUTOSTART_DIR, "sotto.desktop")
+
+
+def _set_autostart_linux(enable: bool):
+    if enable:
+        # Prefer the installed launcher (AUR: /usr/bin/sotto); fall back to running
+        # this interpreter with -m sotto when developing from source.
+        exec_cmd = shutil.which("sotto") or f"{sys.executable} -m sotto"
+        os.makedirs(AUTOSTART_DIR, exist_ok=True)
+        with open(AUTOSTART_DESKTOP, "w", encoding="utf-8") as f:
+            f.write("[Desktop Entry]\n"
+                    "Type=Application\n"
+                    f"Name={APP_NAME}\n"
+                    f"Exec={exec_cmd}\n"
+                    "Icon=sotto\n"
+                    "Terminal=false\n"
+                    "X-GNOME-Autostart-enabled=true\n")
+    else:
+        try:
+            os.remove(AUTOSTART_DESKTOP)
+        except OSError:
+            pass
+
+
+def set_autostart(enable: bool):
+    if sys.platform == "win32":
+        _set_autostart_windows(enable)
+    else:
+        _set_autostart_linux(enable)
 
 
 class TitleBar(QWidget):
@@ -303,7 +339,9 @@ class SettingsWindow(QWidget):
 
         # ---- system ----
         box, lay = section("SYSTEM")
-        self.autostart_cb = QCheckBox("Start Sotto when Windows starts")
+        _autostart_label = ("Start Sotto when Windows starts" if sys.platform == "win32"
+                            else "Start Sotto on login")
+        self.autostart_cb = QCheckBox(_autostart_label)
         self.autostart_cb.setChecked(cfg.get("start_with_windows"))
         self.autostart_cb.toggled.connect(self._save_autostart)
         lay.addWidget(self.autostart_cb)
@@ -343,8 +381,8 @@ class SettingsWindow(QWidget):
         self.model_change.emit(self.cfg.get("model"), self.cfg.get("compute_device"))
 
     def _save_autostart(self, v):
-        self.cfg.set("start_with_windows", v)
-        set_start_with_windows(v)
+        self.cfg.set("start_with_windows", v)   # config key kept for back-compat
+        set_autostart(v)
 
     def _dict_add(self):
         w = self.dict_edit.text().strip()

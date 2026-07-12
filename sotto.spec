@@ -18,7 +18,8 @@ a = Analysis(
     runtime_hooks=[],
     # openvino_telemetry: never bundled — ovc (unused converter tool) falls back
     # to its built-in stub, and the app makes no network calls at runtime.
-    excludes=["openvino_telemetry", "tkinter", "test", "unittest",
+    # evdev is the Linux-only hotkey backend (sotto.hotkey_linux); never bundled on Windows.
+    excludes=["evdev", "openvino_telemetry", "tkinter", "test", "unittest",
               "PySide6.QtQml", "PySide6.QtQuick", "PySide6.QtQuick3D",
               "PySide6.QtPdf", "PySide6.QtPdfWidgets", "PySide6.QtWebEngineCore",
               "PySide6.QtWebEngineWidgets", "PySide6.QtMultimedia",
