@@ -5,7 +5,25 @@ import os
 import sys
 
 
+def _ensure_std_streams():
+    """Give sys.stdout/stderr somewhere to go in the windowed build.
+
+    PyInstaller with console=False leaves both as None, so any library that
+    writes to them dies with "'NoneType' object has no attribute 'write'" —
+    huggingface_hub's tqdm progress bars did exactly that, killing every model
+    download before a byte moved. Anything written is unreachable in a windowed
+    app anyway, so discard it; what matters is that writing never raises.
+    """
+    for stream in ("stdout", "stderr"):
+        if getattr(sys, stream, None) is None:
+            try:
+                setattr(sys, stream, open(os.devnull, "w"))
+            except OSError:  # no devnull: leave it None rather than fail to start
+                pass
+
+
 def main():
+    _ensure_std_streams()
     from .config import APP_DIR, LOG_PATH
     os.makedirs(APP_DIR, exist_ok=True)
     logging.basicConfig(filename=LOG_PATH, level=logging.INFO,

@@ -32,8 +32,8 @@ MODELS = {
     "small.en": ("OpenVINO/whisper-small.en-int8-ov", "~300 MB", "most accurate English"),
     "base (multilingual)": ("OpenVINO/whisper-base-int8-ov", "~95 MB", "fast, any language"),
     "small (multilingual)": ("OpenVINO/whisper-small-int8-ov", "~300 MB", "accurate, any language"),
-    "large-v3-turbo (multilingual)": ("OpenVINO/whisper-large-v3-turbo-int8-ov", "~1.7 GB",
-                                      "best accuracy, slow on this machine"),
+    "large-v3-turbo (multilingual)": ("OpenVINO/whisper-large-v3-turbo-int8-ov", "~830 MB",
+                                      "best accuracy, slower"),
 }
 
 # Hold-to-talk chord presets: name -> set of "sides" of modifiers, resolved in hotkey.py

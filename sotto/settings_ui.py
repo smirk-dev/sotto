@@ -178,7 +178,10 @@ class SettingsWindow(QWidget):
         self._meter_stream = None
         self._dl_timer = QTimer(self)
         self._dl_timer.timeout.connect(self._poll_download)
-        self._dl_model = None
+        self._dl_model = None      # model currently downloading, or None
+        self._dl_thread = None
+        self._dl_error = None
+        self._dl_total = None      # expected bytes, or None while unknown
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -431,55 +434,113 @@ class SettingsWindow(QWidget):
             self.model_change.emit(name, self.cfg.get("compute_device"))
 
     def _update_model_ui(self):
+        """Reflect the selected model, including a download already in flight.
+
+        Downloads outlive this window, so a reopen (or switching models and back)
+        has to restore the in-progress view. It used to unconditionally re-show
+        Download, which then silently no-op'd against the in-flight guard.
+        """
         name = self._selected_model()
         if not name:
             return
         _repo, size, note = MODELS[name]
-        downloaded = engine.is_downloaded(name)
         self.model_note.setText(f"{size} — {note}")
-        self.dl_btn.setVisible(not downloaded)
-        self.dl_status.setText("" if not downloaded else "")
+        downloading = self._dl_model is not None
+        showing_download = downloading and name == self._dl_model
+        self.dl_btn.setVisible(not engine.is_downloaded(name) and not downloading)
+        self.dl_bar.setVisible(showing_download)
+        if showing_download:
+            self._render_progress()
+        elif downloading:
+            self.dl_status.setText(f"downloading {self._dl_model}…")
+        elif engine.is_downloaded(name):
+            self.dl_status.setText("")
+        else:
+            self.dl_status.setText("")
 
     def _start_download(self):
         name = self._selected_model()
         if not name or self._dl_model:
             return
         self._dl_model = name
+        self._dl_error = None
+        self._dl_total = None
         self.dl_btn.hide()
+        self.dl_bar.setRange(0, 0)      # indeterminate until the total is known
         self.dl_bar.show()
         self.dl_status.setText("starting…")
 
         def work():
             try:
+                # total first, so the bar can be determinate; None if the Hub
+                # can't be reached, in which case the download will fail anyway
+                self._dl_total = engine.expected_bytes(name)
                 engine.download_model(name)
                 self._dl_error = None
             except Exception as e:
-                self._dl_error = str(e)
-        self._dl_error = None
-        self._dl_thread = threading.Thread(target=work, daemon=True)
+                self._dl_error = str(e) or e.__class__.__name__
+                log.exception("model download failed: %s", name)
+
+        self._dl_thread = threading.Thread(target=work, name="model-download",
+                                           daemon=True)
         self._dl_thread.start()
         self._dl_timer.start(500)
+
+    def _render_progress(self):
+        """Paint the bar/label from bytes on disk. Safe to call any time."""
+        name = self._dl_model
+        if not name:
+            return
+        got = engine.downloaded_bytes(name)
+        total = self._dl_total
+        if total:
+            pct = min(100, int(got * 100 / total))
+            self.dl_bar.setRange(0, 100)
+            self.dl_bar.setValue(pct)
+            self.dl_status.setText(f"{got/1e6:.0f} / {total/1e6:.0f} MB")
+        else:
+            self.dl_bar.setRange(0, 0)
+            self.dl_status.setText(f"{got/1e6:.0f} MB…")
 
     def _poll_download(self):
         name = self._dl_model
         if name is None:
             self._dl_timer.stop()
             return
-        mb = engine.downloaded_bytes(name) / 1e6
-        self.dl_status.setText(f"{mb:.0f} MB…")
-        if not self._dl_thread.is_alive():
-            self._dl_timer.stop()
-            self._dl_model = None
-            self.dl_bar.hide()
-            if self._dl_error:
-                self.dl_status.setText("download failed — check internet")
-            else:
-                self.dl_status.setText("downloaded ✓")
-                self._refresh_models()
-                name2 = self._selected_model()
-                if name2 and engine.is_downloaded(name2):
-                    self.cfg.set("model", name2)
-                    self.model_change.emit(name2, self.cfg.get("compute_device"))
+        if self._dl_thread.is_alive():
+            if name == self._selected_model():
+                self._render_progress()
+            return
+        # finished (or failed) — settle the UI
+        self._dl_timer.stop()
+        self._dl_model = None
+        self.dl_bar.hide()
+        # refresh first: it re-marks "✓", restores the button, and blanks the
+        # status line — so the outcome has to be written after it, not before
+        self._refresh_models()
+        if self._dl_error:
+            self.dl_status.setText(self._download_error_text(self._dl_error))
+            return
+        self.dl_status.setText("downloaded ✓")
+        if engine.is_downloaded(name):
+            # switch to what was actually downloaded, not whatever is selected now
+            self.cfg.set("model", name)
+            self.model_change.emit(name, self.cfg.get("compute_device"))
+
+    @staticmethod
+    def _download_error_text(err):
+        """A cause the user can act on — it isn't always the internet."""
+        low = err.lower()
+        if "incomplete" in low:
+            return "download incomplete — click Download to resume"
+        if "space" in low or "disk" in low:
+            return "download failed — not enough disk space"
+        if "permission" in low or "access is denied" in low:
+            return "download failed — permission denied"
+        if any(s in low for s in ("connect", "timeout", "timed out", "resolve",
+                                  "network", "ssl", "proxy")):
+            return "download failed — check your internet connection"
+        return f"download failed — {err[:60]}"
 
     # ---------- stats + mic meter lifecycle ----------
 

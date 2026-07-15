@@ -12,12 +12,22 @@ remains — keeping end-of-utterance latency low even for long dictations.
 import os
 import re
 import threading
+import time
 
 import numpy as np
 
 from . import vad
 from .audio import SAMPLE_RATE
 from .config import MODELS, MODELS_DIR
+
+# Xet fetches into a global chunk cache and only materialises files into the model
+# dir near the end, so an 800 MB download reads as "10 MB" for minutes and looks
+# hung — the progress UI polls the model dir. Plain HTTP streams into it instead,
+# for ~13% more wall clock on a one-off download. huggingface_hub snapshots this
+# into a module constant at import time, so it has to be set before it is imported
+# (engine imports it lazily, inside the functions below). setdefault so anyone who
+# sets HF_HUB_DISABLE_XET=0 deliberately still gets Xet.
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
 # mild repeat penalty as a backstop for repeat-loops (VAD is the primary noise gate);
 # 1.2 suppresses loops without clipping real speech (1.3 dropped trailing words).
@@ -73,14 +83,72 @@ def model_dir(name):
     return os.path.join(MODELS_DIR, MODELS[name][0].split("/")[-1])
 
 
+# Every OpenVINO whisper repo we list ships exactly these runtime artifacts, so
+# requiring all of them tells a finished download apart from one that stopped
+# half way. Checking only the encoder (as this used to) called a model with a
+# missing decoder "downloaded", which surfaced later as a load error instead.
+_REQUIRED_FILES = (
+    "openvino_encoder_model.bin", "openvino_encoder_model.xml",
+    "openvino_decoder_model.bin", "openvino_decoder_model.xml",
+    "openvino_tokenizer.bin", "openvino_tokenizer.xml",
+    "openvino_detokenizer.bin", "openvino_detokenizer.xml",
+)
+
+DOWNLOAD_ATTEMPTS = 3
+
+
 def is_downloaded(name):
-    return os.path.exists(os.path.join(model_dir(name), "openvino_encoder_model.bin"))
+    """True only if every file the pipeline needs is present (see _REQUIRED_FILES)."""
+    d = model_dir(name)
+    return all(os.path.exists(os.path.join(d, f)) for f in _REQUIRED_FILES)
 
 
-def download_model(name):
-    """Blocking download from the official Hugging Face mirror (user-initiated)."""
+def missing_files(name):
+    """Which required files are absent — for diagnosing a partial download."""
+    d = model_dir(name)
+    return [f for f in _REQUIRED_FILES if not os.path.exists(os.path.join(d, f))]
+
+
+def expected_bytes(name):
+    """Total download size per the Hub, or None if it can't be determined.
+
+    Lets the UI show real progress instead of an indeterminate spinner.
+    """
+    from huggingface_hub import HfApi
+    try:
+        info = HfApi().model_info(MODELS[name][0], files_metadata=True)
+        return sum(s.size or 0 for s in (info.siblings or [])) or None
+    except Exception:
+        return None
+
+
+def download_model(name, attempts=DOWNLOAD_ATTEMPTS):
+    """Blocking download from the official Hugging Face mirror (user-initiated).
+
+    Transient network failures are retried with a backoff; snapshot_download
+    resumes from whatever is already on disk, so a retry only re-fetches the
+    bytes that are actually missing.
+    """
     from huggingface_hub import snapshot_download
-    snapshot_download(MODELS[name][0], local_dir=model_dir(name))
+    from huggingface_hub.utils import disable_progress_bars
+    # huggingface_hub draws tqdm progress bars on sys.stderr, which is None in the
+    # windowed (console=False) build — the AttributeError killed every download
+    # before a single byte moved, so downloads never worked from the packaged app.
+    # The Settings window renders its own progress, so the bars are pure liability.
+    disable_progress_bars()
+    delay = 2
+    for attempt in range(1, attempts + 1):
+        try:
+            snapshot_download(MODELS[name][0], local_dir=model_dir(name))
+            break
+        except Exception:
+            if attempt == attempts:
+                raise
+            time.sleep(delay)
+            delay *= 2
+    missing = missing_files(name)
+    if missing:  # Hub reported success but the model is unusable — say so now
+        raise RuntimeError(f"download incomplete, missing: {', '.join(missing)}")
 
 
 def downloaded_bytes(name):
