@@ -14,6 +14,10 @@ if sys.platform == "win32":
         insert_text,
         foreground_injection_blocked,
         _set_clipboard_text,
+        # SendInput plumbing: no runtime caller, but the Windows-only test
+        # scripts in tests/ synthesise key events through it.
+        INPUT,
+        _key_event,
     )
 else:
     from .inject_linux import (  # noqa: F401

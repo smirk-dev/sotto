@@ -1,5 +1,6 @@
 """Settings window: frameless dark card, single scrolling column of sections."""
 
+import logging
 import os
 import shutil
 import subprocess
@@ -7,7 +8,6 @@ import sys
 import threading
 
 import numpy as np
-import sounddevice as sd
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPainter, QColor
 from PySide6.QtWidgets import (
@@ -19,6 +19,8 @@ from . import theme, history, engine
 from .config import MODELS, HOLD_CHORDS, TOGGLE_COMBOS, APP_DIR
 from .audio import list_input_devices
 from . import APP_NAME, APP_VERSION
+
+log = logging.getLogger("sotto")
 
 # (label, code) — code is what the engine gets. "auto" = English+Hindi (constrained,
 # the robust default); "auto-all" = unconstrained 99-language detection.
@@ -515,16 +517,16 @@ class SettingsWindow(QWidget):
     def _start_meter(self):
         if self._meter_stream:
             return
-        from .audio import resolve_device
+        from .audio import open_input_stream, resolve_device
         try:
             def cb(indata, frames, t, status):
                 rms = float(np.sqrt(np.mean(indata[:, 0] ** 2)))
                 self.mic_level.emit(min(1.0, rms * 18.0))
-            self._meter_stream = sd.InputStream(
-                samplerate=16000, channels=1, dtype="float32", blocksize=1600,
-                device=resolve_device(self.cfg.get("input_device")), callback=cb)
+            self._meter_stream = open_input_stream(
+                resolve_device(self.cfg.get("input_device")), cb)
             self._meter_stream.start()
         except Exception:
+            log.exception("mic meter failed to open")
             self._meter_stream = None
 
     def _stop_meter(self):

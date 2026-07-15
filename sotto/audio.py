@@ -15,6 +15,13 @@ import sounddevice as sd
 SAMPLE_RATE = 16000
 BLOCK = 1600  # 100 ms
 
+# A muted mic still delivers frames, but only the ±1 LSB of dither the driver
+# emits (peak 1/32768 = 3.05e-5). Real capture — even a silent room — sits orders
+# of magnitude above that, so a whole utterance under this peak means no signal
+# ever reached us (muted endpoint or hardware mute key) rather than "you were
+# quiet". Kept 10x above the dither floor and well under room tone (~5e-3).
+SILENCE_PEAK = 3e-4
+
 # Prefer one host API per platform so the picker isn't cluttered with duplicates
 # (WASAPI on Windows; PulseAudio/PipeWire on Linux, avoiding raw-ALSA dupes).
 _PREFERRED_APIS = ("WASAPI",) if sys.platform == "win32" else ("PipeWire", "Pulse", "PulseAudio")
@@ -44,6 +51,36 @@ def resolve_device(name_substring):
     return None
 
 
+def _extra_settings(device):
+    """WASAPI-specific stream settings, or None for other host APIs.
+
+    WASAPI in shared mode only opens at the endpoint's native mix rate (48 kHz
+    here), so asking for our 16 kHz raises "Invalid sample rate [-9997]" — which
+    is every device the picker lists, since list_input_devices() is WASAPI-only.
+    auto_convert lets PortAudio resample for us. It is rejected on other host
+    APIs, so it is only attached to genuine WASAPI devices (device=None is the
+    PortAudio default, typically MME, which resamples on its own).
+    """
+    if sys.platform != "win32":
+        return None
+    try:
+        idx = sd.default.device[0] if device is None else device
+        api = sd.query_hostapis(sd.query_devices(idx)["hostapi"])["name"]
+        if "wasapi" in api.lower():
+            return sd.WasapiSettings(auto_convert=True)
+    except Exception:
+        pass  # unknown device: let InputStream raise the real error
+    return None
+
+
+def open_input_stream(device, callback, blocksize=BLOCK):
+    """A 16 kHz mono float32 input stream, with per-host-API quirks handled."""
+    return sd.InputStream(
+        samplerate=SAMPLE_RATE, channels=1, dtype="float32", blocksize=blocksize,
+        device=device, callback=callback, extra_settings=_extra_settings(device),
+    )
+
+
 class Recorder:
     """Warm persistent stream; capture happens only between begin()/end()."""
 
@@ -57,14 +94,16 @@ class Recorder:
         self._lock = threading.Lock()
 
     def open(self, device=None):
-        """(Re)open the warm stream. Safe to call again with the same device."""
-        if self._stream is not None and device == self._device:
+        """(Re)open the warm stream. Safe to call again with the same device.
+
+        A stream that has gone inactive (device unplugged, or the endpoint reset
+        under us) is reopened rather than kept: PortAudio does not resurrect it,
+        and holding it would silently capture nothing until the app restarts.
+        """
+        if self._stream is not None and device == self._device and self._stream.active:
             return
         self.close()
-        self._stream = sd.InputStream(
-            samplerate=SAMPLE_RATE, channels=1, dtype="float32",
-            blocksize=BLOCK, device=device, callback=self._callback,
-        )
+        self._stream = open_input_stream(device, self._callback)
         self._stream.start()
         self._device = device
 

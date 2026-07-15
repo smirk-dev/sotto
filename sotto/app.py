@@ -5,13 +5,14 @@ import os
 import threading
 import time
 
+import numpy as np
 from PySide6.QtCore import QObject, Qt, Signal, QTimer
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QAction, QActionGroup
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 
 from . import APP_NAME, APP_VERSION, theme, history, inject, sounds, textproc
-from .audio import Recorder, resolve_device
+from .audio import Recorder, resolve_device, SILENCE_PEAK
 from .config import Config, LOG_PATH
 from .engine import Engine, DictationSession, is_downloaded
 from .hotkey import HotkeyHook
@@ -75,6 +76,7 @@ class SottoApp(QObject):
         self._streaming = False
         self._stream_full = ""
         self._stream_any_ok = False
+        self._last_peak = 0.0
 
         self.overlay = OverlayPill()
         self.settings = SettingsWindow(self.cfg)
@@ -260,7 +262,11 @@ class SottoApp(QObject):
         self._feeder_stop.set()
         duration = time.monotonic() - self._t0
         audio = self.recorder.end()
-        log.info("recorder stopped, %.1fs audio", len(audio) / 16000)
+        # peak drives the muted-vs-quiet distinction in _on_finished, and is logged
+        # so a dead mic is visible in app.log without reproducing it live
+        self._last_peak = float(np.max(np.abs(audio))) if len(audio) else 0.0
+        log.info("recorder stopped, %.1fs audio, peak=%.6f", len(audio) / 16000,
+                 self._last_peak)
         if self.cfg.get("sounds"):
             sounds.play("stop")
         self.tray.setIcon(make_icon("idle"))
@@ -318,7 +324,15 @@ class SottoApp(QObject):
         self.busy = False
         log.info("dictation finished: %d chars, %.1fs, inserted=%s", len(text), duration, ok)
         if not text:
-            self.overlay.show_state("error", "no speech detected")
+            # A muted mic still delivers frames, so an empty transcript alone can't
+            # tell "you said nothing" from "nothing ever reached the mic" — the
+            # peak can, and only the latter needs the user to go fix something.
+            if self._last_peak < SILENCE_PEAK:
+                log.warning("mic delivered silence (peak=%.6f) — muted or dead device",
+                            self._last_peak)
+                self.overlay.show_state("error", "no mic signal — check mic mute")
+            else:
+                self.overlay.show_state("error", "no speech detected")
             return
         if not ok:
             if inject.foreground_injection_blocked():
