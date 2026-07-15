@@ -4,22 +4,28 @@ States: listening (live bars), transcribing (pulsing dots), inserted (check),
 error (message). The window has WS_EX_NOACTIVATE so it can never steal focus.
 """
 
+import math
 import sys
 
 from PySide6.QtCore import Qt, QTimer, QRectF
-from PySide6.QtGui import QColor, QPainter, QPen, QFont
+from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPen, QFont
 from PySide6.QtWidgets import QWidget
 
 from . import theme
 
-_BAR_COUNT = 24
+_BAR_COUNT = 20
 GWL_EXSTYLE = -20
 WS_EX_NOACTIVATE = 0x08000000
 WS_EX_TOOLWINDOW = 0x00000080
 
 
 class OverlayPill(QWidget):
-    W, H = 260, 56
+    # Compact by default: listening/transcribing are the states that sit on screen
+    # for as long as you speak, so they stay as small as the waveform allows. The
+    # text states are brief and must stay legible, so they widen to fit their
+    # message instead of clipping it (see _width_for).
+    W, H = 150, 34
+    _PAD_X = 14   # inset from the rounded ends for both bars and text
 
     def __init__(self):
         super().__init__(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
@@ -55,7 +61,26 @@ class OverlayPill(QWidget):
     def _place(self):
         screen = self.screen() or self.window().screen()
         geo = screen.availableGeometry()
-        self.move(geo.center().x() - self.W // 2, geo.bottom() - self.H - 28)
+        self.move(geo.center().x() - self.width() // 2, geo.bottom() - self.height() - 28)
+
+    def _text_font(self):
+        f = QFont(self.font())
+        f.setPointSize(8)
+        f.setWeight(QFont.DemiBold)
+        return f
+
+    def _text_for(self, state, message):
+        if state == "inserted":
+            return "✓  inserted"
+        return message or "error"
+
+    def _width_for(self, state, message):
+        """Compact for the waveform states, wide enough to hold the text ones."""
+        if state in ("listening", "transcribing"):
+            return self.W
+        advance = QFontMetrics(self._text_font()).horizontalAdvance(
+            self._text_for(state, message))
+        return max(self.W, advance + 2 * self._PAD_X + 12)
 
     # ---- public API (call from the GUI thread) ----
 
@@ -69,10 +94,16 @@ class OverlayPill(QWidget):
         else:
             self._timer.stop()
             self._hide_timer.start(1400 if state == "inserted" else 2600)
+        width = self._width_for(state, message)
+        resized = width != self.width()
+        if resized:
+            self.setFixedSize(width, self.H)
         if not self.isVisible():
             self._place()
             self.show()
             self._apply_noactivate()
+        elif resized:
+            self._place()   # keep it centred as the pill grows or shrinks
         self.update()
 
     def push_level(self, level: float):
@@ -91,48 +122,46 @@ class OverlayPill(QWidget):
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        rect = QRectF(1, 1, self.W - 2, self.H - 2)
+        h = self.height()
+        rect = QRectF(1, 1, self.width() - 2, h - 2)
         p.setPen(QPen(QColor(theme.BORDER), 1))
         p.setBrush(QColor(16, 16, 20, 242))
-        p.drawRoundedRect(rect, self.H / 2 - 1, self.H / 2 - 1)
+        p.drawRoundedRect(rect, h / 2 - 1, h / 2 - 1)
 
         if self._state == "listening":
             self._paint_bars(p, QColor(theme.ACCENT))
         elif self._state == "transcribing":
             self._paint_dots(p)
         elif self._state == "inserted":
-            self._paint_text(p, "✓  inserted", theme.OK)
+            self._paint_text(p, self._text_for("inserted", ""), theme.OK)
         elif self._state == "error":
-            self._paint_text(p, self._message or "error", theme.ERROR)
+            self._paint_text(p, self._text_for("error", self._message), theme.ERROR)
         p.end()
 
     def _paint_bars(self, p, color):
-        span = self.W - 48
-        bw = span / _BAR_COUNT
-        cy = self.H / 2
+        bw = (self.width() - 2 * self._PAD_X) / _BAR_COUNT
+        cy = self.height() / 2
         p.setPen(Qt.NoPen)
         p.setBrush(color)
         for i, lvl in enumerate(self._levels):
-            h = max(3.0, min(1.0, lvl) * (self.H - 22))
-            x = 24 + i * bw
-            p.drawRoundedRect(QRectF(x + bw * 0.22, cy - h / 2, bw * 0.56, h), 2, 2)
+            h = max(2.0, min(1.0, lvl) * (self.height() - 14))
+            x = self._PAD_X + i * bw
+            p.drawRoundedRect(QRectF(x + bw * 0.22, cy - h / 2, bw * 0.56, h), 1.5, 1.5)
 
     def _paint_dots(self, p):
-        cy = self.H / 2
+        cy = self.height() / 2
+        d, gap = 5.0, 12.0
+        x0 = self.width() / 2 - gap - d / 2
         p.setPen(Qt.NoPen)
         for i in range(3):
             k = (self._phase * 0.18 - i * 0.55)
-            import math
             a = 0.35 + 0.65 * max(0.0, math.sin(k)) ** 2
             c = QColor(theme.ACCENT)
             c.setAlphaF(a)
             p.setBrush(c)
-            p.drawEllipse(QRectF(self.W / 2 - 26 + i * 20, cy - 4, 8, 8))
+            p.drawEllipse(QRectF(x0 + i * gap, cy - d / 2, d, d))
 
     def _paint_text(self, p, text, color):
         p.setPen(QColor(color))
-        f = QFont(self.font())
-        f.setPointSize(10)
-        f.setWeight(QFont.DemiBold)
-        p.setFont(f)
+        p.setFont(self._text_font())
         p.drawText(self.rect(), Qt.AlignCenter, text)
