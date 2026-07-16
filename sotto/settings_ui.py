@@ -33,6 +33,15 @@ LANGS = [
     ("Japanese", "ja"), ("Chinese", "zh"), ("Arabic", "ar"), ("Russian", "ru"),
 ]
 
+# (label, code). "Auto" picks per model — the iGPU is a big win for the encoder-heavy
+# large model and a slight loss for the small ones, so it is not a blanket choice;
+# see engine.resolve_compute_device. The explicit options stay for troubleshooting.
+COMPUTE_DEVICES = [
+    ("Auto (recommended)", "Auto"),
+    ("CPU", "CPU"),
+    ("GPU (Intel graphics)", "GPU"),
+]
+
 STARTUP_DIR = os.path.join(os.environ.get("APPDATA", ""),
                            "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 STARTUP_LNK = os.path.join(STARTUP_DIR, "Sotto.lnk")
@@ -243,8 +252,13 @@ class SettingsWindow(QWidget):
         dl_row.addWidget(self.dl_status)
         lay.addLayout(dl_row)
         self.device_combo = QComboBox()
-        self.device_combo.addItems(["CPU (recommended)", "GPU (Intel graphics)"])
-        self.device_combo.setCurrentIndex(1 if cfg.get("compute_device") == "GPU" else 0)
+        for label, code in COMPUTE_DEVICES:
+            self.device_combo.addItem(label, userData=code)
+        cur_dev = cfg.get("compute_device")
+        for i in range(self.device_combo.count()):
+            if self.device_combo.itemData(i) == cur_dev:
+                self.device_combo.setCurrentIndex(i)
+                break
         self.device_combo.currentIndexChanged.connect(self._save_compute)
         lay.addLayout(row("Run on", self.device_combo))
         self.lang_combo = QComboBox()
@@ -382,7 +396,7 @@ class SettingsWindow(QWidget):
             self.cfg.set("input_device", None if name.startswith("System default") else name)
 
     def _save_compute(self, idx):
-        self.cfg.set("compute_device", "GPU" if idx == 1 else "CPU")
+        self.cfg.set("compute_device", self.device_combo.itemData(idx))
         self.model_change.emit(self.cfg.get("model"), self.cfg.get("compute_device"))
 
     def _save_autostart(self, v):

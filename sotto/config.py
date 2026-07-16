@@ -33,19 +33,19 @@ MODELS = {
     "base (multilingual)": ("OpenVINO/whisper-base-int8-ov", "~95 MB", "fast, any language"),
     "small (multilingual)": ("OpenVINO/whisper-small-int8-ov", "~300 MB", "accurate, any language"),
     "large-v3-turbo (multilingual)": ("OpenVINO/whisper-large-v3-turbo-int8-ov", "~830 MB",
-                                      "best accuracy, slower"),
+                                      "best accuracy — fast on Intel graphics, slow without"),
 }
 
 # Hold-to-talk chord presets: name -> set of "sides" of modifiers, resolved in hotkey.py
 HOLD_CHORDS = ["Ctrl+Win", "Alt+Win", "Ctrl+Alt", "F9 (hold)"]
 TOGGLE_COMBOS = ["Ctrl+Alt+D", "Ctrl+Shift+Space", "Ctrl+Alt+Space", "F10", "Disabled"]
 
-CONFIG_VERSION = 2               # bump to migrate existing installs (see Config.__init__)
+CONFIG_VERSION = 3               # bump to migrate existing installs (see Config.__init__)
 
 DEFAULTS = {
     "config_version": CONFIG_VERSION,
     "model": "small (multilingual)",  # understands Hindi/Hinglish/English out of the box
-    "compute_device": "CPU",     # CPU | GPU (Intel graphics via OpenVINO)
+    "compute_device": "Auto",    # Auto (per-model, see engine.resolve_compute_device) | CPU | GPU
     "language": "auto",          # "auto" (detect per chunk) or an ISO code; .en models force en
     "hold_chord": "Ctrl+Win",
     "toggle_combo": "Ctrl+Alt+D",
@@ -78,12 +78,23 @@ class Config:
                     self._data[k] = v
         except (OSError, ValueError):
             pass
-        # one-time migration: switch older English-only installs to the new
-        # multilingual default so Hindi/Hinglish works without any setup.
-        if stored.get("config_version", 1) < CONFIG_VERSION:
+        # One-time migrations, each gated on the version that introduced it. Do NOT
+        # widen these to "< CONFIG_VERSION": that would re-run every past migration
+        # on every future bump and clobber deliberate choices (the v2 one resets the
+        # model, so a v3 bump would silently drag a large-v3-turbo user back to small).
+        ver = stored.get("config_version", 1) if stored else CONFIG_VERSION
+        if ver < 2:
+            # switch older English-only installs to the multilingual default so
+            # Hindi/Hinglish works without any setup.
             self._data["model"] = "small (multilingual)"
             self._data["language"] = "auto"
-            self._data["config_version"] = CONFIG_VERSION
+        if ver < 3:
+            # "CPU" used to be the only sensible default; it is now a pessimisation
+            # for the big model (see engine.resolve_compute_device). Only move
+            # installs still sitting on that old default -- a deliberate "GPU" stays.
+            if self._data.get("compute_device") == "CPU":
+                self._data["compute_device"] = "Auto"
+        self._data["config_version"] = CONFIG_VERSION
         self.save()
 
     def get(self, key):

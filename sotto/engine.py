@@ -9,6 +9,7 @@ at silence boundaries) so that when the user releases the hotkey only the tail
 remains — keeping end-of-utterance latency low even for long dictations.
 """
 
+import logging
 import os
 import re
 import threading
@@ -19,6 +20,8 @@ import numpy as np
 from . import vad
 from .audio import SAMPLE_RATE
 from .config import MODELS, MODELS_DIR
+
+log = logging.getLogger("sotto")
 
 # Xet fetches into a global chunk cache and only materialises files into the model
 # dir near the end, so an 800 MB download reads as "10 MB" for minutes and looks
@@ -96,6 +99,53 @@ _REQUIRED_FILES = (
 
 DOWNLOAD_ATTEMPTS = 3
 
+# Which models are worth handing to the iGPU. Measured, not assumed — on this class
+# of machine (i7-1360P + Iris Xe, tests/bench_accel.py, 4.4 s clip):
+#
+#   large-v3-turbo   CPU 8.02 s   GPU 2.12 s   -> GPU wins decisively
+#   small            CPU 1.49 s   GPU 1.31 s   -> a wash, and the GPU LOSES on
+#                                                 longer clips (2.63 vs 2.27 s)
+#
+# End to end through the app (hotkey release -> text) the turbo win is 4.60 s -> 1.79 s
+# warm, i.e. ~2.6x rather than the ~3.8x those raw generate() numbers imply — the
+# engine caps max_new_tokens by clip length and the bench does not. Same text either
+# way: tests/eval_device_accuracy.py scores CER 15.3% on both devices.
+#
+# The split is architectural rather than incidental. large-v3-turbo is ~79% encoder
+# (32 encoder layers vs 4 decoder — that is the "turbo" design), and Whisper's
+# encoder is one fixed-size, fully parallel pass over a 30 s mel regardless of how
+# long you actually spoke: on CPU it costs a flat ~8 s for a 4 s clip and a 14 s one
+# alike. That shape — big, dense, parallel, no autoregression — is what an iGPU is
+# for. Small models spend their time in the memory-bound decoder loop instead, where
+# the GPU has nothing to add and per-call overhead makes it a net loss. So this stays
+# a per-model list, not a blanket "use the GPU if you have one".
+_GPU_WORTH_IT = {"large-v3-turbo (multilingual)"}
+
+# CPU is the floor: it needs no driver and is always present, so it is what we fall
+# back to when a GPU is asked for but cannot actually run the model.
+FALLBACK_DEVICE = "CPU"
+
+
+def gpu_available():
+    """True if OpenVINO can see a usable GPU. Cheap, but not free — call off the GUI thread."""
+    try:
+        import openvino
+        return "GPU" in openvino.Core().available_devices
+    except Exception:  # no openvino, no driver, enumeration blew up -> no GPU
+        return False
+
+
+def resolve_compute_device(device, model_name):
+    """Turn the stored setting into a real OpenVINO device.
+
+    "Auto" picks per model (see _GPU_WORTH_IT); an explicit "CPU"/"GPU" is obeyed.
+    """
+    if device and device != "Auto":
+        return device
+    if model_name in _GPU_WORTH_IT and gpu_available():
+        return "GPU"
+    return FALLBACK_DEVICE
+
 
 def is_downloaded(name):
     """True only if every file the pipeline needs is present (see _REQUIRED_FILES)."""
@@ -168,26 +218,49 @@ class Engine:
     def __init__(self, on_state=None):
         self.pipe = None
         self.model_name = None
+        self.device = None          # the device actually in use (post-resolve/fallback)
         self.state = "empty"        # empty | loading | ready | error
         self.error = ""
         self.on_state = on_state or (lambda s: None)
         self._lock = threading.Lock()
 
-    def load(self, name, device="CPU"):
-        def work():
+    def load(self, name, device="Auto"):
+        def build(target):
             import openvino_genai
+            os.makedirs(CACHE_DIR, exist_ok=True)
+            # First GPU compile of large-v3-turbo takes ~15 s and leaves ~900 MB of
+            # compiled kernels in CACHE_DIR; later loads reuse it and take ~5 s.
+            t0 = time.perf_counter()
+            pipe = openvino_genai.WhisperPipeline(model_dir(name), target,
+                                                  CACHE_DIR=CACHE_DIR)
+            log.info("loaded %s on %s in %.1fs", name, target, time.perf_counter() - t0)
+            return pipe
+
+        def work():
             self.state = "loading"
             self.on_state("loading")
+            target = resolve_compute_device(device, name)
             try:
-                os.makedirs(CACHE_DIR, exist_ok=True)
-                pipe = openvino_genai.WhisperPipeline(model_dir(name), device,
-                                                      CACHE_DIR=CACHE_DIR)
+                try:
+                    pipe = build(target)
+                except Exception as e:
+                    # A GPU can be enumerated and still fail to compile or fit the
+                    # model (old driver, tiny shared pool, headless session). That is
+                    # a reason to be slower, not to leave the user with a dead app.
+                    if target == FALLBACK_DEVICE:
+                        raise
+                    log.warning("%s load failed on %s (%s) — falling back to %s",
+                                name, target, str(e)[:120], FALLBACK_DEVICE)
+                    target = FALLBACK_DEVICE
+                    pipe = build(target)
                 with self._lock:
                     self.pipe = pipe
                     self.model_name = name
+                    self.device = target
                 self.state = "ready"
                 self.on_state("ready")
             except Exception as e:  # surfaced in tray/settings
+                log.exception("model load failed: %s", name)
                 self.state = "error"
                 self.error = str(e)
                 self.on_state("error")

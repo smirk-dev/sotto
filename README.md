@@ -148,16 +148,28 @@ Settings → *Model & language*. Downloaded models show a ✓; others show a **D
 | `small.en` | ~300 MB | most accurate English only |
 | `base (multilingual)` | ~95 MB | fast, any language, lower accuracy |
 | **`small (multilingual)`** *(default)* | ~300 MB | English + Hindi + Hinglish |
-| `large-v3-turbo` | ~1.7 GB | best accuracy, slow without a GPU |
+| `large-v3-turbo` | ~830 MB | best accuracy, esp. Hindi/Hinglish — needs an Intel iGPU to be quick |
 
 Data lives in `%LOCALAPPDATA%\Sotto` (models, config, history, log).
+
+**Run on** defaults to *Auto*, which picks the device that is actually faster for the model you
+chose. That is the CPU for everything except `large-v3-turbo`, where an Intel iGPU takes it from
+**~4.6 s to ~1.8 s** from hotkey release to text (i7-1360P + Iris Xe, measured through the app),
+with identical output. The reason is architectural: turbo is ~79% encoder, and Whisper's encoder
+is one big parallel pass over a fixed 30 s window — dense, parallel work an iGPU eats. Smaller
+models spend their time in the memory-bound decoder instead, where the iGPU is a slight *loss*,
+so Auto leaves them on the CPU. Pick CPU or GPU explicitly if you would rather not have it decide;
+if the GPU can't run the model, Sotto falls back to the CPU by itself. The first GPU run compiles
+the model (~15 s, one time) and caches ~900 MB under `%LOCALAPPDATA%\Sotto\models\ov-cache`.
 
 ## FAQ
 
 **Is my audio uploaded anywhere?** No. Transcription runs entirely on your CPU. The only network
 request is the one-time model download you start yourself.
 
-**Does it need a GPU?** No — it's tuned for CPU. (You can optionally run on an Intel iGPU.)
+**Does it need a GPU?** No — every model runs on the CPU, and the default one is tuned for it. An
+Intel iGPU is only worth it for `large-v3-turbo`, where it cuts ~4.6 s per utterance to ~1.8 s;
+*Auto* uses it for that model if you have one, and nothing changes for anyone who doesn't.
 
 **The hotkey does nothing — or text isn't typed — in one specific app (often a terminal).** That
 app is running **as Administrator** while Sotto isn't. Windows UIPI blocks a normal-privilege app

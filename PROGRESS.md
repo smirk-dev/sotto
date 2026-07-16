@@ -14,6 +14,7 @@ Local dictation app (Wispr Flow clone) for this Windows 11 machine. Spec: `PROMP
     numpy hits 353 GFLOPS so it's ctranslate2-specific. ct2 4.4.0 has no cp313 wheel.
   - OpenVINO whisper-small.en-int8 CPU: 2.7 / 3.7 / 5.7 s. GPU (Iris Xe): similar but 84 s first
     compile + high variance → CPU default, GPU offered in settings (compile cached via CACHE_DIR).
+    **This verdict is model-specific — do not generalise it (see the device note below).**
   - **OpenVINO whisper-base.en-int8 CPU: 0.75 / 1.1 / 1.96 s — all under the 2 s target.**
     With `initial_prompt="Vocabulary: Suryansh."` the 13.7 s clip transcribed word-perfect
     including the name → default model, dictionary fed via initial_prompt.
@@ -24,6 +25,37 @@ Local dictation app (Wispr Flow clone) for this Windows 11 machine. Spec: `PROMP
     this chip; rejected.
   Model picker offers official OpenVINO int8 conversions: tiny.en / base.en (default) / small.en /
   base / small / large-v3-turbo (multilingual → language selection + auto-detect).
+- **Device: "Auto" per model, not a global choice** (tests/bench_accel.py, 4.4 s clip, same box).
+  The small.en GPU result above is real but does not transfer, because the models have opposite
+  shapes:
+  | model | CPU | GPU | verdict |
+  |---|---|---|---|
+  | large-v3-turbo | 8.02 s | **2.12 s** | GPU, 3.8x |
+  | small (multilingual) | 1.49 s | 1.31 s | CPU — a wash short, GPU *loses* long (2.63 vs 2.27 s) |
+
+  Those are raw `pipe.generate`. **What the user actually feels is 2.6x**, not 3.8x: driving the
+  packaged app (hotkey release → text in Notepad, 3 dictations in a row) gives CPU 5.01 s cold /
+  4.60 s warm vs GPU 3.01 s cold / **1.79 s warm**. The raw figure overstates it because the
+  engine caps `max_new_tokens` by clip length, which the bench does not. Quote the app number.
+
+  large-v3-turbo is ~79% encoder (32 encoder layers vs 4 decoder — the "turbo" design), and
+  Whisper's encoder is a single fixed-size parallel pass over a 30 s mel: on CPU it costs a flat
+  ~8 s whether the clip is 4.4 s or 13.7 s. Dense, parallel, no autoregression — an iGPU eats it.
+  Small models spend their time in the memory-bound decoder loop instead, where the iGPU adds
+  nothing. Hence `engine._GPU_WORTH_IT`, not a blanket "use the GPU if present".
+  - CPU scheduling hints are a dead end: LATENCY / PCORE_ONLY / no-HT bought ≤5% (8.02 → 7.64 s).
+    The encoder saturates the chip regardless of which cores it lands on.
+  - **Accuracy is unchanged**, which is the only reason this was worth taking: 10 Kokoro-TTS
+    Hindi/Hinglish clips with ground truth (tests/eval_device_accuracy.py) score CER 15.3% on both
+    devices, 9/10 byte-identical, while the GPU is 2.43x faster end-to-end. (The 15.3% is a TTS
+    artifact — Kokoro says "plan finalize" with a Hindi accent and Whisper faithfully writes
+    "प्लान फाइनलाईस"; what matters here is that the two devices tie.)
+  - Costs: first GPU compile ~15 s (not the 84 s of the 2024-era OpenVINO), then ~5 s loads, and
+    ~900 MB of cached kernels. `Engine.load` falls back to CPU if the GPU can't run the model.
+  - Rejected: restricting the language slot to en+hi via `suppress_tokens` to kill the auto-path's
+    second decode. It works and is text-identical, but the second pass only fires on a mis-tag,
+    which doesn't reproduce (Whisper tags hinglish.wav "hi" first try), and repeated runs showed
+    no speed win — 3.51-4.28 s either way. The first 4.57 → 3.91 s reading was noise.
 - **UI stack:** PySide6-Essentials (LGPL) for overlay pill, tray, settings, history — one framework.
 - **Hotkeys:** custom WH_KEYBOARD_LL hook via ctypes (no `keyboard` lib) — chord hold Ctrl+Win
   (either side), toggle default Ctrl+Alt+D, both configurable via preset dropdowns.
